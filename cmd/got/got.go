@@ -1,22 +1,17 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
-
-	"got/internal/index/file"
-
-	"got/internal/got"
-	"got/internal/objects/disk"
+	"got/internal/cmd"
 )
 
-var g = got.NewGot(disk.NewObjects(), file.ReadFromFile())
-var sum string
+//var g = got.NewGot(disk.NewObjects(), file.ReadFromFile())
+//var sum string
 
 func main() {
-
-	//fmt.Println(g.HashObject([]byte("test content"), true, objects.TypeBlob))
+	if err := cmd.GotCmd.Execute(); err != nil {
+		panic(err)
+	}
+	/*//fmt.Println(g.HashObject([]byte("test content"), true, objects.TypeBlob))
 	//fmt.Printf("[Objects]:\n%v\n", internal.Objects)
 	//fmt.Printf("Index:\n%v\n", internal.Index.String())
 
@@ -61,5 +56,5 @@ func main() {
 	commit = g.CommitTree("third commit", tree, prev)
 	//fmt.Printf("[Objects]:\n%v\n", internal.Objects)
 	prev = commit
-
+	*/
 }

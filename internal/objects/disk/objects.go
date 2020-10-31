@@ -15,7 +15,6 @@ import (
 type Objects struct{}
 
 func NewObjects() *Objects {
-	filesystem.MkDirIfIsNotExist(got.GotRootDir, os.ModePerm)
 	filesystem.MkDirIfIsNotExist(objectsDir, os.ModePerm)
 	return &Objects{}
 }
