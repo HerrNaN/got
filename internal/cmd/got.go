@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"got/internal/cmd/hashobject"
 	gotInit "got/internal/cmd/init"
 )
 
@@ -17,4 +18,5 @@ func init() {
 		fmt.Println("Nothing")
 	}
 	GotCmd.AddCommand(gotInit.Cmd)
+	GotCmd.AddCommand(hashobject.Cmd)
 }
