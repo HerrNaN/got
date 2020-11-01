@@ -2,6 +2,7 @@ package disk
 
 import (
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -37,8 +38,10 @@ func (o *Objects) Get(sum string) (objects.Object, error) {
 	file := fmt.Sprintf("%s%s/%s", objectsDir, dir, sum[2:])
 	var obj objects.Object
 	bs, _ := ioutil.ReadFile(file)
-	obj.Bs = string(bs)
-	obj.Type = objects.TypeBlob
+	err := json.Unmarshal(bs, &obj)
+	if err != nil {
+		return objects.Object{}, err
+	}
 	return obj, nil
 }
 
@@ -46,5 +49,11 @@ func (o *Objects) Store(sum string, bs []byte, t objects.Type) {
 	dir := sum[:2]
 	file := fmt.Sprintf("%s%s/%s", objectsDir, dir, sum[2:])
 	filesystem.MkDirIfIsNotExist(objectsDir+dir, os.ModePerm)
-	ioutil.WriteFile(file, bs, os.ModePerm)
+	obj := objects.Object{
+		Type: t,
+		Size: len(bs),
+		Bs:   string(bs),
+	}
+	buf, _ := json.Marshal(obj)
+	ioutil.WriteFile(file, buf, os.ModePerm)
 }

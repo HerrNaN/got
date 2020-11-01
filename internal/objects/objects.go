@@ -12,6 +12,7 @@ type Objects interface {
 
 type Object struct {
 	Type Type
+	Size int
 	Bs   string
 }
 

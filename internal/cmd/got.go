@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	"got/internal/cmd/catfile"
+
 	"github.com/spf13/cobra"
 
 	"got/internal/cmd/hashobject"
@@ -19,4 +21,5 @@ func init() {
 	}
 	GotCmd.AddCommand(gotInit.Cmd)
 	GotCmd.AddCommand(hashobject.Cmd)
+	GotCmd.AddCommand(catfile.Cmd)
 }

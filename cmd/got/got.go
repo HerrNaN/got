@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"got/internal/cmd"
 )
 
@@ -9,7 +11,7 @@ import (
 
 func main() {
 	if err := cmd.GotCmd.Execute(); err != nil {
-		panic(err)
+		os.Exit(1)
 	}
 	/*//fmt.Println(g.HashObject([]byte("test content"), true, objects.TypeBlob))
 	//fmt.Printf("[Objects]:\n%v\n", internal.Objects)
