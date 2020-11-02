@@ -8,40 +8,63 @@ import (
 	"got/internal/objects"
 )
 
-type Objects map[string]objects.Object
-
-func NewObjects() Objects {
-	return make(map[string]objects.Object)
+type Objects struct {
+	blobs map[string]objects.Blob
+	trees map[string]objects.Tree
 }
 
-func (o Objects) HashObject(bs []byte, store bool, t objects.Type) string {
+func NewObjects() *Objects {
+	return &Objects{
+		blobs: make(map[string]objects.Blob),
+		trees: make(map[string]objects.Tree),
+	}
+}
+
+func (o *Objects) HashObject(bs []byte, store bool, t objects.Type) string {
 	sum := sha1.Sum(bs)
 	stringSum := fmt.Sprintf("%x", sum)
 	if store {
-		o.Store(stringSum, bs, t)
+		o.StoreBlob(stringSum, bs)
 	}
 	return stringSum
 }
 
-func (o Objects) Get(sum string) (objects.Object, error) {
-	obj, ok := o[sum]
+func (o *Objects) GetBlob(sum string) (objects.Blob, error) {
+	blob, ok := o.blobs[sum]
 	if ok {
-		return obj, nil
+		return blob, nil
 	}
-	return objects.Object{}, errors.New("object not found")
+	return objects.Blob{}, errors.New("object not found")
 }
 
-func (o Objects) Store(sum string, bs []byte, t objects.Type) {
-	o[sum] = objects.Object{
-		Type: t,
-		Bs:   string(bs),
+func (o *Objects) GetTree(sum string) (objects.Tree, error) {
+	tree, ok := o.trees[sum]
+	if ok {
+		return tree, nil
+	}
+	return objects.Tree{}, errors.New("object not found")
+}
+
+func (o *Objects) StoreTree(sum string, entries []objects.TreeEntry) {
+	o.trees[sum] = objects.Tree{
+		Entries: entries,
 	}
 }
 
-func (o Objects) String() string {
+func (o *Objects) StoreBlob(sum string, bs []byte) {
+	o.blobs[sum] = objects.Blob{
+		Size:    len(bs),
+		Content: string(bs),
+	}
+}
+
+func (o *Objects) String() string {
 	var buf string
-	for sum, obj := range o {
-		buf += fmt.Sprintf("# %-8v %v\n%s\n\n", sum[:8], obj.Type, obj.Bs)
+	for sum, blob := range o.blobs {
+		buf += fmt.Sprintf("# %-8v %v\n%s\n\n", sum[:8], objects.TypeBlob, blob.Content)
+	}
+	for sum, tree := range o.trees {
+		buf += fmt.Sprintf("# %-8v %v\n%v\n\n", sum[:8], objects.TypeTree, tree.Entries)
 	}
 	return buf
 }

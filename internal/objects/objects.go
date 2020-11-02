@@ -6,14 +6,25 @@ import (
 
 type Objects interface {
 	HashObject(bs []byte, store bool, t Type) string
-	Get(sum string) (Object, error)
-	Store(sum string, bs []byte, t Type)
+	GetBlob(sum string) (Blob, error)
+	GetTree(sum string) (Tree, error)
+	StoreBlob(sum string, bs []byte)
+	StoreTree(sum string, entries []TreeEntry)
 }
 
-type Object struct {
-	Type Type
-	Size int
-	Bs   string
+type Blob struct {
+	Size    int
+	Content string
+}
+
+type Tree struct {
+	Entries []TreeEntry
+}
+
+type TreeEntry struct {
+	Mode     os.FileMode
+	Name     string
+	Checksum string
 }
 
 const (
