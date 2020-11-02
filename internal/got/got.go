@@ -3,41 +3,42 @@ package got
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"got/internal/index"
 	"got/internal/objects"
 )
 
 const (
-	GotRootDir = ".got/"
+	RootDir = ".got/"
 )
 
 type Got struct {
-	objects objects.Objects
-	index   index.Index
+	Objects objects.Objects
+	Index   index.Index
 }
 
 func NewGot(objects objects.Objects, index index.Index) *Got {
-	return &Got{objects: objects, index: index}
+	return &Got{Objects: objects, Index: index}
 }
 
 func (g *Got) HashFile(filename string, store bool) string {
 	bs, _ := ioutil.ReadFile(filename)
-	return g.objects.HashObject(bs, store, objects.TypeBlob)
+	return g.Objects.HashObject(bs, store, objects.TypeBlob)
 }
 
 func (g *Got) AddToIndex(sum string, filename string) {
-	g.index.Update(sum, filename)
+	g.Index.Update(sum, filename)
 }
 
 func (g *Got) WriteTree() string {
 	fmt.Println("Writing tree...")
 	var buf string
-	for _, e := range g.index.SortedEntries() {
+	for _, e := range g.Index.SortedEntries() {
 		buf += fmt.Sprintf("%s\n", e.String())
 	}
 	buf = buf[:len(buf)-1] // Drop last new line
-	sum := g.objects.HashObject([]byte(buf), true, objects.TypeTree)
+	sum := g.Objects.HashObject([]byte(buf), true, objects.TypeTree)
 	fmt.Printf("%s\n\n", sum)
 	return sum
 }
@@ -56,7 +57,15 @@ func (g *Got) CommitTree(msg string, tree string, parent string) string {
 	buf += fmt.Sprintln("author John Doe <john@doe.com> 0123456789 +0000")
 	buf += fmt.Sprintln("committer John Doe <john@doe.com> 0123456789 +0000")
 	buf += fmt.Sprintf("\n%s", msg)
-	sum := g.objects.HashObject([]byte(buf), true, objects.TypeCommit)
+	sum := g.Objects.HashObject([]byte(buf), true, objects.TypeCommit)
 	fmt.Printf("%s\n\n", sum)
 	return sum
+}
+
+func IsInitialized() bool {
+	s, err := os.Stat(RootDir)
+	if err != nil {
+		return false
+	}
+	return s.IsDir()
 }

@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	"got/internal/cmd/updateindex"
+
 	"got/internal/cmd/catfile"
 
 	"github.com/spf13/cobra"
@@ -22,4 +24,5 @@ func init() {
 	GotCmd.AddCommand(gotInit.Cmd)
 	GotCmd.AddCommand(hashobject.Cmd)
 	GotCmd.AddCommand(catfile.Cmd)
+	GotCmd.AddCommand(updateindex.Cmd)
 }

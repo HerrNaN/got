@@ -14,10 +14,10 @@ var Cmd = &cobra.Command{
 	Short: "Initialized a got repository",
 	Run: func(cmd *cobra.Command, args []string) {
 		wd, _ := os.Getwd()
-		_, err := os.Stat(got.GotRootDir)
+		_, err := os.Stat(got.RootDir)
 		if os.IsNotExist(err) {
-			os.Mkdir(got.GotRootDir, os.ModePerm)
-			fmt.Printf("Repository initialized in %s/%s\n", wd, got.GotRootDir)
+			os.Mkdir(got.RootDir, os.ModePerm)
+			fmt.Printf("Repository initialized in %s/%s\n", wd, got.RootDir)
 			return
 		}
 		fmt.Printf("Repository already exists for %s\n", wd)

@@ -21,7 +21,7 @@ func NewObjects() *Objects {
 }
 
 const (
-	objectsDir = got.GotRootDir + "objects/"
+	objectsDir = got.RootDir + "objects/"
 )
 
 func (o *Objects) HashObject(bs []byte, store bool, t objects.Type) string {
