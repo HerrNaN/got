@@ -32,14 +32,14 @@ func (g *Got) AddToIndex(sum string, filename string) {
 }
 
 func (g *Got) WriteTree() string {
-	fmt.Println("Writing tree...")
+	//fmt.Println("Writing tree...")
 	var buf string
 	for _, e := range g.Index.SortedEntries() {
 		buf += fmt.Sprintf("%s\n", e.String())
 	}
 	buf = buf[:len(buf)-1] // Drop last new line
 	sum := g.Objects.HashObject([]byte(buf), true, objects.TypeTree)
-	fmt.Printf("%s\n\n", sum)
+	//fmt.Printf("%s\n\n", sum)
 	return sum
 }
 

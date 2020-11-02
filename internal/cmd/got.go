@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	"got/internal/cmd/writetree"
+
 	"got/internal/cmd/updateindex"
 
 	"got/internal/cmd/catfile"
@@ -25,4 +27,5 @@ func init() {
 	GotCmd.AddCommand(hashobject.Cmd)
 	GotCmd.AddCommand(catfile.Cmd)
 	GotCmd.AddCommand(updateindex.Cmd)
+	GotCmd.AddCommand(writetree.Cmd)
 }
