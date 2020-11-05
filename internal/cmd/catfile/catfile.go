@@ -4,13 +4,15 @@ import (
 	"errors"
 	"fmt"
 
+	"got/internal/got/filesystem"
+
 	"github.com/spf13/cobra"
 
-	"got/internal/objects/disk"
+	"got/internal/objects"
 )
 
 var Cmd = &cobra.Command{
-	Use:                   "cat-file { -t | -s | -p } object",
+	Use:                   "cat-file { -t | -p } object",
 	DisableFlagsInUseLine: true,
 	Short:                 "Provide content or type and size information for repository objects",
 	Args:                  cobra.ExactArgs(1),
@@ -20,57 +22,58 @@ type flag string
 
 const (
 	flagType        = "type"
-	flagSize        = "size"
 	flagPrettyPrint = "pretty-print"
 )
 
 func init() {
 	showType := Cmd.Flags().BoolP(flagType, "t", false, "Show type of object")
-	showSize := Cmd.Flags().BoolP(flagSize, "s", false, "Show size of object")
 	prettyPrintContent := Cmd.Flags().BoolP(flagPrettyPrint, "p", false, "Pretty-print content of object")
 	Cmd.Run = func(cmd *cobra.Command, args []string) {
-		run(cmd, args, *showType, *showSize, *prettyPrintContent)
+		run(cmd, args, *showType, *prettyPrintContent)
 	}
 }
 
-func run(cmd *cobra.Command, args []string, showType bool, showSize bool, prettyPrint bool) {
-	flagUsed, err := flagsAreCompatible(showType, showSize, prettyPrint)
+func run(cmd *cobra.Command, args []string, showType bool, prettyPrint bool) {
+	flagUsed, err := flagsAreCompatible(showType, prettyPrint)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	objs := disk.NewObjects()
-	sum := args[0]
-	o, err := objs.Get(sum)
+	g, err := filesystem.NewGot()
 	if err != nil {
-		fmt.Printf("object %s not found", sum)
+		fmt.Println(err)
+		return
+	}
+	sum := args[0]
+	t, err := g.Objects.TypeOf(sum)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	var o objects.Object
+	switch t {
+	case objects.TypeBlob:
+		o, _ = g.Objects.GetBlob(sum)
+	case objects.TypeTree:
+		o, _ = g.Objects.GetTree(sum)
+	default:
+		fmt.Println("no object found")
 		return
 	}
 	switch flagUsed {
 	case flagType:
-		fmt.Println(o.Type)
-	case flagSize:
-		fmt.Println(o.Size)
+		fmt.Println(o.Type())
 	case flagPrettyPrint:
-		fmt.Println(o.Bs)
+		fmt.Println(o.Content())
 	}
 }
 
-func flagsAreCompatible(showType, showSize, prettyPrint bool) (flag, error) {
-	if !showSize && !showType && !prettyPrint {
-		return "", errors.New("one of -s, -t or -p flag must be used")
-	}
-	if showType && showSize {
-		return "", errors.New("-s and -t are not compatible")
+func flagsAreCompatible(showType, prettyPrint bool) (flag, error) {
+	if !showType && !prettyPrint {
+		return "", errors.New("one of -t or -p flag must be used")
 	}
 	if showType && prettyPrint {
-		return "", errors.New("-p and -t are not compatible")
-	}
-	if showSize && prettyPrint {
-		return "", errors.New("-s and -p are not compatible")
-	}
-	if showSize {
-		return flagSize, nil
+		return "", errors.New("-t and -p are not compatible")
 	}
 	if showType {
 		return flagType, nil

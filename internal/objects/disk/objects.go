@@ -72,9 +72,19 @@ func (o *Objects) StoreBlob(sum string, bs []byte) {
 	dir := sum[:2]
 	file := fmt.Sprintf("%s%s/%s", objectsDir, dir, sum[2:])
 	filesystem.MkDirIfIsNotExist(objectsDir+dir, os.ModePerm)
-	blob := objects.Blob{
-		Content: string(bs),
-	}
+	blob := objects.NewBlob(bs)
 	buf, _ := json.Marshal(blob)
 	ioutil.WriteFile(file, buf, os.ModePerm)
+}
+
+func (o *Objects) TypeOf(sum string) (objects.Type, error) {
+	_, err := o.GetBlob(sum)
+	if err == nil {
+		return objects.TypeBlob, nil
+	}
+	_, err = o.GetTree(sum)
+	if err == nil {
+		return objects.TypeTree, nil
+	}
+	return "", fmt.Errorf("couldn't get type of %s", sum)
 }

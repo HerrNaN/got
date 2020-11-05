@@ -5,26 +5,23 @@ import (
 )
 
 type Objects interface {
+	// Computes the ID of the object and optionally stores the object as well
 	HashObject(bs []byte, store bool, t Type) string
+
+	// Retrieves a Blob from a given ID
 	GetBlob(sum string) (Blob, error)
+
+	// Retrieves a Tree from a given ID
 	GetTree(sum string) (Tree, error)
+
+	// Stores content as Blob with a given ID
 	StoreBlob(sum string, bs []byte)
+
+	// Stores content as Tree with a given ID
 	StoreTree(sum string, entries []TreeEntry)
-}
 
-type Blob struct {
-	Size    int
-	Content string
-}
-
-type Tree struct {
-	Entries []TreeEntry
-}
-
-type TreeEntry struct {
-	Mode     os.FileMode
-	Name     string
-	Checksum string
+	// Returns the Type of the objects with the given ID
+	TypeOf(sum string) (Type, error)
 }
 
 const (
@@ -40,3 +37,8 @@ const (
 	TypeTree   Type = "tree"
 	TypeCommit Type = "commit"
 )
+
+type Object interface {
+	Type() Type
+	Content() string
+}

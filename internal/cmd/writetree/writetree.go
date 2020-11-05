@@ -3,11 +3,9 @@ package writetree
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
+	"got/internal/got/filesystem"
 
-	"got/internal/got"
-	"got/internal/index/file"
-	"got/internal/objects/disk"
+	"github.com/spf13/cobra"
 )
 
 var Cmd = &cobra.Command{
@@ -15,15 +13,11 @@ var Cmd = &cobra.Command{
 	Short: "Create tree object from the current index",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		if !got.IsInitialized() {
-			fmt.Println("repository is not initialized")
+		g, err := filesystem.NewGot()
+		if err != nil {
+			fmt.Println(err)
 			return
 		}
-		i, err := file.ReadFromFile()
-		if err != nil {
-			i = file.NewIndex()
-		}
-		g := got.NewGot(disk.NewObjects(), i)
 		sum := g.WriteTree()
 		fmt.Println(sum)
 	},

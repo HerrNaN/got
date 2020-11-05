@@ -3,12 +3,9 @@ package updateindex
 import (
 	"fmt"
 
-	"got/internal/got"
+	"got/internal/got/filesystem"
 
 	"github.com/spf13/cobra"
-
-	"got/internal/index/file"
-	"got/internal/objects/disk"
 )
 
 var Cmd = &cobra.Command{
@@ -25,19 +22,14 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string, add bool) {
-	if !got.IsInitialized() {
-		fmt.Println("repository is not initialized")
+	g, err := filesystem.NewGot()
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
-	i, err := file.ReadFromFile()
-	if err != nil {
-		i = file.NewIndex()
-	}
-	g := got.NewGot(disk.NewObjects(), i)
 	filename := args[0]
 	if !add && !g.Index.HasEntryFor(filename) {
 		return
 	}
-	sum := g.HashFile(filename, true)
-	g.AddToIndex(sum, filename)
+	g.AddToIndex(filename)
 }

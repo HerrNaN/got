@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"got/internal/got"
+	"got/internal/got/filesystem"
 )
 
 var Cmd = &cobra.Command{
@@ -14,12 +15,11 @@ var Cmd = &cobra.Command{
 	Short: "Initialized a got repository",
 	Run: func(cmd *cobra.Command, args []string) {
 		wd, _ := os.Getwd()
-		_, err := os.Stat(got.RootDir)
-		if os.IsNotExist(err) {
-			os.Mkdir(got.RootDir, os.ModePerm)
-			fmt.Printf("Repository initialized in %s/%s\n", wd, got.RootDir)
+		err := filesystem.Initialize(wd)
+		if err != nil {
+			fmt.Println(err)
 			return
 		}
-		fmt.Printf("Repository already exists for %s\n", wd)
+		fmt.Printf("Repository initialized in %s/%s", wd, got.RootDir)
 	},
 }

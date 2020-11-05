@@ -51,6 +51,28 @@ func (i *Index) SortedEntries() []index.Entry {
 	return entries
 }
 
+func (i *Index) AddFile(filename string) error {
+	bs, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't read file %s", filename)
+	}
+	stat, _ := os.Stat(filename)
+	sum := fmt.Sprintf("%x", sha1.Sum(bs))
+	i.Entries[filename] = index.NewEntry(stat.Mode(), objects.TypeBlob, sum, filename)
+	i.writeToFile()
+	return nil
+}
+
+func (i *Index) AddTreeContents(tree objects.Tree) {
+	for _, e := range tree.Entries {
+		i.Entries[e.Name] = index.NewEntry(e.Mode, e.Type, e.Checksum, e.Name)
+	}
+}
+
+func (i *Index) AddTree(sum string, prefix string) {
+	i.Entries[prefix] = index.NewEntry(os.ModePerm, objects.TypeTree, sum, prefix)
+}
+
 func (i *Index) Update(sum string, name string) {
 	stat, _ := os.Stat(name)
 	if stat.IsDir() {

@@ -52,10 +52,19 @@ func (o *Objects) StoreTree(sum string, entries []objects.TreeEntry) {
 }
 
 func (o *Objects) StoreBlob(sum string, bs []byte) {
-	o.blobs[sum] = objects.Blob{
-		Size:    len(bs),
-		Content: string(bs),
+	o.blobs[sum] = objects.NewBlob(bs)
+}
+
+func (o *Objects) TypeOf(sum string) (objects.Type, error) {
+	_, ok := o.blobs[sum]
+	if ok {
+		return objects.TypeBlob, nil
 	}
+	_, ok = o.trees[sum]
+	if ok {
+		return objects.TypeTree, nil
+	}
+	return "", errors.New("object not found")
 }
 
 func (o *Objects) String() string {

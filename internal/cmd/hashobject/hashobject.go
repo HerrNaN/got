@@ -2,13 +2,10 @@ package hashobject
 
 import (
 	"fmt"
-	"io/ioutil"
+
+	"got/internal/got/filesystem"
 
 	"github.com/spf13/cobra"
-
-	"got/internal/objects"
-
-	"got/internal/objects/disk"
 )
 
 var Cmd = &cobra.Command{
@@ -22,13 +19,15 @@ func init() {
 	Cmd.Run = func(cmd *cobra.Command, args []string) {
 		run(cmd, args, *write)
 	}
-
 }
 
 func run(cmd *cobra.Command, args []string, write bool) {
+	g, err := filesystem.NewGot()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	f := args[0]
-	bs, _ := ioutil.ReadFile(f)
-	objs := disk.NewObjects()
-	sum := objs.HashObject(bs, write, objects.TypeBlob)
+	sum := g.HashFile(f, write)
 	fmt.Println(sum)
 }
