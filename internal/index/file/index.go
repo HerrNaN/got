@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -112,6 +113,15 @@ func (i *Index) GetEntrySum(filename string) (string, error) {
 		return "", errors.New("entry not found")
 	}
 	return e.Sum, nil
+}
+
+func (i *Index) HasDescendantsInIndex(dir string) bool {
+	for _, e := range i.SortedEntries() {
+		if strings.HasPrefix(e.Name, dir) {
+			return true
+		}
+	}
+	return false
 }
 
 func (i *Index) updateChecksum() {

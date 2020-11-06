@@ -22,4 +22,5 @@ type Index interface {
 	HasEntryFor(filename string) bool
 
 	GetEntrySum(filename string) (string, error)
+	HasDescendantsInIndex(dir string) bool
 }

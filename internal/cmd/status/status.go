@@ -2,7 +2,6 @@ package status
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/gookit/color"
 
@@ -24,12 +23,7 @@ func runStatus(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		return
 	}
-	wd, err := os.Getwd()
-	if err != nil {
-		fmt.Println("couldn't get working directory")
-		return
-	}
-	staged, unstaged, err := g.Status(wd)
+	staged, unstaged, err := g.Status()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -45,5 +39,4 @@ func runStatus(cmd *cobra.Command, args []string) {
 		color.Red.Printf("        modified:   %s\n", u)
 	}
 	fmt.Println()
-
 }

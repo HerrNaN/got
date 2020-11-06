@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/pkg/errors"
 
@@ -102,16 +101,81 @@ func (g *Got) CommitTree(msg string, tree string, parent string) string {
 	return sum
 }
 
-func (g *Got) Status(wd string) ([]string, []string, error) {
-	staged, err := g.staged(wd)
+func (g *Got) Status() ([]string, []string, error) {
+	staged, err := g.staged(g.dir)
 	if err != nil {
 		return nil, nil, err
 	}
-	unstaged, err := g.unstaged(wd)
+	unstaged, err := g.unstaged(g.dir)
 	if err != nil {
 		return nil, nil, err
 	}
 	return staged, unstaged, nil
+}
+
+func (g *Got) unstaged(wd string) ([]string, error) {
+	var unstaged []string
+	err := filepath.Walk(wd, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if path == wd {
+			return nil
+		}
+		path = path[len(wd)+1:]
+
+		// Ignore .git and .got directories
+		if info.Name() == ".git" || info.Name() == ".got" {
+			return filepath.SkipDir
+		}
+
+		// Don't list the contents of a directory that doesn't have any staged files
+		if info.IsDir() && !g.Index.HasDescendantsInIndex(path) {
+			unstaged = append(unstaged, path+string(filepath.Separator))
+			return filepath.SkipDir
+		}
+
+		// Only show the file paths
+		if info.IsDir() {
+			return nil
+		}
+
+		unstaged = append(unstaged, path)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return unstaged, nil
+}
+
+func (g *Got) staged(wd string) ([]string, error) {
+	var staged []string
+	err := filepath.Walk(wd, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if path == wd {
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+		path = path[len(wd)+1:]
+		sum := g.HashFile(path, false)
+		indexedSum, err := g.Index.GetEntrySum(path)
+		if err != nil {
+			return nil
+		}
+		if sum == indexedSum {
+			staged = append(staged, path)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return staged, nil
 }
 
 func getRepositoryRoot() (string, error) {
@@ -164,78 +228,4 @@ func Initialize(dir string) error {
 		return err
 	}
 	return filesystem.MkFileIfIsNotExist(filepath.Join(dir, rootDir, file.IndexFile))
-}
-
-func (g *Got) hasStagedDescendants(dir string) bool {
-	for _, e := range g.Index.SortedEntries() {
-		if strings.HasPrefix(e.Name, dir) {
-			return true
-		}
-	}
-	return false
-}
-
-func (g *Got) unstaged(wd string) ([]string, error) {
-	var unstaged []string
-	err := filepath.Walk(wd, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if path == wd {
-			return nil
-		}
-		path = path[len(wd)+1:]
-
-		// Ignore .git and .got directories
-		if info.Name() == ".git" || info.Name() == ".got" {
-			return filepath.SkipDir
-		}
-
-		// Don't list the contents of a directory that doesn't have any staged files
-		if info.IsDir() && !g.hasStagedDescendants(path) {
-			unstaged = append(unstaged, path+string(filepath.Separator))
-			return filepath.SkipDir
-		}
-
-		// Only show the file paths
-		if info.IsDir() {
-			return nil
-		}
-
-		unstaged = append(unstaged, path)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return unstaged, nil
-}
-
-func (g *Got) staged(wd string) ([]string, error) {
-	var staged []string
-	err := filepath.Walk(wd, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if path == wd {
-			return nil
-		}
-		if info.IsDir() {
-			return nil
-		}
-		path = path[len(wd)+1:]
-		sum := g.HashFile(path, false)
-		indexedSum, err := g.Index.GetEntrySum(path)
-		if err != nil {
-			return nil
-		}
-		if sum == indexedSum {
-			staged = append(staged, path)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return staged, nil
 }
