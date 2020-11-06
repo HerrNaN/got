@@ -6,7 +6,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"got/internal/got"
 	"got/internal/got/filesystem"
 )
 
@@ -20,6 +19,6 @@ var Cmd = &cobra.Command{
 			fmt.Println(err)
 			return
 		}
-		fmt.Printf("Repository initialized in %s/%s", wd, got.RootDir)
+		fmt.Printf("Repository initialized in %s/.got", wd)
 	},
 }

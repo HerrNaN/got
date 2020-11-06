@@ -6,38 +6,46 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/pkg/errors"
 
-	"got/internal/got"
 	"got/internal/index"
 	"got/internal/objects"
 )
 
 const (
-	indexFile = got.RootDir + "index"
+	IndexFile = "index"
 )
 
 type Index struct {
+	Dir      string
 	Version  int
 	Entries  index.EntryMap
 	Checksum string
 }
 
-func NewIndex() *Index {
+func NewIndex(dir string) *Index {
 	return &Index{
+		Dir:     dir,
 		Version: 0,
 		Entries: make(index.EntryMap),
 	}
 }
 
-func ReadFromFile() (*Index, error) {
-	bs, _ := ioutil.ReadFile(indexFile)
-	var i Index
-	err := json.Unmarshal(bs, &i)
+func ReadFromFile(dir string) (*Index, error) {
+	bs, err := ioutil.ReadFile(filepath.Join(dir, IndexFile))
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't read index file")
+	}
+	if len(bs) == 0 {
+		return NewIndex(dir), nil
+	}
+	var i Index
+	err = json.Unmarshal(bs, &i)
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't unmarshal index file")
 	}
 	if i.calculateChecksum() != i.Checksum {
 		return nil, errors.New("index file corrupted")
@@ -59,28 +67,19 @@ func (i *Index) AddFile(filename string) error {
 	stat, _ := os.Stat(filename)
 	sum := fmt.Sprintf("%x", sha1.Sum(bs))
 	i.Entries[filename] = index.NewEntry(stat.Mode(), objects.TypeBlob, sum, filename)
-	i.writeToFile()
-	return nil
+	return i.writeToFile()
 }
 
-func (i *Index) AddTreeContents(tree objects.Tree) {
+func (i *Index) AddTreeContents(tree objects.Tree) error {
 	for _, e := range tree.Entries {
 		i.Entries[e.Name] = index.NewEntry(e.Mode, e.Type, e.Checksum, e.Name)
 	}
+	return i.writeToFile()
 }
 
-func (i *Index) AddTree(sum string, prefix string) {
+func (i *Index) AddTree(sum string, prefix string) error {
 	i.Entries[prefix] = index.NewEntry(os.ModePerm, objects.TypeTree, sum, prefix)
-}
-
-func (i *Index) Update(sum string, name string) {
-	stat, _ := os.Stat(name)
-	if stat.IsDir() {
-		i.Entries[name] = index.NewEntry(stat.Mode(), objects.TypeTree, sum, name)
-	} else {
-		i.Entries[name] = index.NewEntry(stat.Mode(), objects.TypeBlob, sum, name)
-	}
-	i.writeToFile()
+	return i.writeToFile()
 }
 
 func (i *Index) GetEntryFor(name string) (index.Entry, error) {
@@ -107,6 +106,14 @@ func (i *Index) HasEntryFor(name string) bool {
 	return ok
 }
 
+func (i *Index) GetEntrySum(filename string) (string, error) {
+	e, ok := i.Entries[filename]
+	if !ok {
+		return "", errors.New("entry not found")
+	}
+	return e.Sum, nil
+}
+
 func (i *Index) updateChecksum() {
 	i.Checksum = i.calculateChecksum()
 }
@@ -119,8 +126,8 @@ func (i *Index) calculateChecksum() string {
 	return fmt.Sprintf("%x", sha1.Sum(buf))
 }
 
-func (i *Index) writeToFile() {
+func (i *Index) writeToFile() error {
 	i.updateChecksum()
 	bs, _ := json.Marshal(*i)
-	ioutil.WriteFile(indexFile, bs, os.ModePerm)
+	return ioutil.WriteFile(filepath.Join(i.Dir, IndexFile), bs, os.ModePerm)
 }

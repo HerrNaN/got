@@ -6,22 +6,25 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-
-	"got/internal/got"
+	"path/filepath"
 
 	"got/internal/objects"
 	"got/internal/pkg/filesystem"
 )
 
-type Objects struct{}
+type Objects struct {
+	dir string
+}
 
-func NewObjects() *Objects {
-	filesystem.MkDirIfIsNotExist(objectsDir, os.ModePerm)
-	return &Objects{}
+func NewObjects(dir string) *Objects {
+	filesystem.MkDirIfIsNotExist(filepath.Join(dir, ObjectsDir), os.ModePerm)
+	return &Objects{
+		dir: dir,
+	}
 }
 
 const (
-	objectsDir = got.RootDir + "objects/"
+	ObjectsDir = "objects"
 )
 
 func (o *Objects) HashObject(bs []byte, store bool, t objects.Type) string {
@@ -35,7 +38,7 @@ func (o *Objects) HashObject(bs []byte, store bool, t objects.Type) string {
 
 func (o *Objects) GetBlob(sum string) (objects.Blob, error) {
 	dir := sum[:2]
-	file := fmt.Sprintf("%s%s/%s", objectsDir, dir, sum[2:])
+	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
 	var obj objects.Blob
 	bs, _ := ioutil.ReadFile(file)
 	err := json.Unmarshal(bs, &obj)
@@ -47,7 +50,7 @@ func (o *Objects) GetBlob(sum string) (objects.Blob, error) {
 
 func (o *Objects) GetTree(sum string) (objects.Tree, error) {
 	dir := sum[:2]
-	file := fmt.Sprintf("%s%s/%s", objectsDir, dir, sum[2:])
+	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
 	var tree objects.Tree
 	bs, _ := ioutil.ReadFile(file)
 	err := json.Unmarshal(bs, &tree)
@@ -59,8 +62,8 @@ func (o *Objects) GetTree(sum string) (objects.Tree, error) {
 
 func (o *Objects) StoreTree(sum string, entries []objects.TreeEntry) {
 	dir := sum[:2]
-	file := fmt.Sprintf("%s%s/%s", objectsDir, dir, sum[2:])
-	filesystem.MkDirIfIsNotExist(objectsDir+dir, os.ModePerm)
+	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
+	filesystem.MkDirIfIsNotExist(filepath.Join(o.dir, ObjectsDir, dir), os.ModePerm)
 	tree := objects.Tree{
 		Entries: entries,
 	}
@@ -70,8 +73,8 @@ func (o *Objects) StoreTree(sum string, entries []objects.TreeEntry) {
 
 func (o *Objects) StoreBlob(sum string, bs []byte) {
 	dir := sum[:2]
-	file := fmt.Sprintf("%s%s/%s", objectsDir, dir, sum[2:])
-	filesystem.MkDirIfIsNotExist(objectsDir+dir, os.ModePerm)
+	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
+	filesystem.MkDirIfIsNotExist(filepath.Join(o.dir, ObjectsDir, dir), os.ModePerm)
 	blob := objects.NewBlob(bs)
 	buf, _ := json.Marshal(blob)
 	ioutil.WriteFile(file, buf, os.ModePerm)

@@ -22,5 +22,8 @@ func runAdd(cmd *cobra.Command, args []string) {
 		return
 	}
 	f := args[0]
-	g.AddToIndex(f)
+	err = g.AddToIndex(f)
+	if err != nil {
+		fmt.Println(err)
+	}
 }

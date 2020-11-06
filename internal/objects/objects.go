@@ -28,6 +28,7 @@ const (
 	NORM os.FileMode = 100644
 	EXEC os.FileMode = 100755
 	SYMB os.FileMode = 120000
+	DIR  os.FileMode = os.ModeDir + 100644
 )
 
 type Type string

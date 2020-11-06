@@ -3,20 +3,16 @@ package cmd
 import (
 	"fmt"
 
-	"got/internal/cmd/add"
-
-	"got/internal/cmd/readtree"
-
-	"got/internal/cmd/writetree"
-
-	"got/internal/cmd/updateindex"
-
-	"got/internal/cmd/catfile"
-
 	"github.com/spf13/cobra"
 
+	"got/internal/cmd/add"
+	"got/internal/cmd/catfile"
 	"got/internal/cmd/hashobject"
 	gotInit "got/internal/cmd/init"
+	"got/internal/cmd/readtree"
+	"got/internal/cmd/status"
+	"got/internal/cmd/updateindex"
+	"got/internal/cmd/writetree"
 )
 
 var GotCmd = &cobra.Command{
@@ -34,4 +30,5 @@ func init() {
 	GotCmd.AddCommand(writetree.Cmd)
 	GotCmd.AddCommand(readtree.Cmd)
 	GotCmd.AddCommand(add.Cmd)
+	GotCmd.AddCommand(status.Cmd)
 }
