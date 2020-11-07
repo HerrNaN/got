@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	rootDir = ".got"
+	rootDir  = ".got"
+	headFile = "HEAD"
 )
 
 type Got struct {
@@ -212,7 +213,8 @@ func hasGotDir(dir string) bool {
 func IsInitialized(dir string) bool {
 	return filesystem.DirExists(filepath.Join(dir, rootDir)) &&
 		filesystem.DirExists(filepath.Join(dir, rootDir, disk.ObjectsDir)) &&
-		filesystem.FileExists(filepath.Join(dir, rootDir, file.IndexFile))
+		filesystem.FileExists(filepath.Join(dir, rootDir, file.IndexFile)) &&
+		filesystem.FileExists(filepath.Join(dir, rootDir, headFile))
 }
 
 func Initialize(dir string) error {
@@ -227,5 +229,13 @@ func Initialize(dir string) error {
 	if err != nil {
 		return err
 	}
-	return filesystem.MkFileIfIsNotExist(filepath.Join(dir, rootDir, file.IndexFile))
+	err = filesystem.MkFileIfIsNotExist(filepath.Join(dir, rootDir, file.IndexFile))
+	if err != nil {
+		return err
+	}
+	err = filesystem.MkFileIfIsNotExist(filepath.Join(dir, rootDir, headFile))
+	if err != nil {
+		return err
+	}
+	return nil
 }
