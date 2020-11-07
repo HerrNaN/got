@@ -17,7 +17,6 @@ type Objects struct {
 }
 
 func NewObjects(dir string) *Objects {
-	filesystem.MkDirIfIsNotExist(filepath.Join(dir, ObjectsDir), os.ModePerm)
 	return &Objects{
 		dir: dir,
 	}
