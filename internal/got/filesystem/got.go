@@ -16,9 +16,12 @@ import (
 )
 
 const (
-	rootDir  = ".got"
-	headFile = "HEAD"
+	rootDir = ".got"
 )
+
+var objectsDir = filepath.Join(rootDir, disk.ObjectsDir)
+var indexFile = filepath.Join(rootDir, file.IndexFile)
+var headFile = filepath.Join(rootDir, "HEAD")
 
 type Got struct {
 	gotDir  string
@@ -282,9 +285,9 @@ func hasGotDir(dir string) bool {
 
 func IsInitialized(dir string) bool {
 	return filesystem.DirExists(filepath.Join(dir, rootDir)) &&
-		filesystem.DirExists(filepath.Join(dir, rootDir, disk.ObjectsDir)) &&
-		filesystem.FileExists(filepath.Join(dir, rootDir, file.IndexFile)) &&
-		filesystem.FileExists(filepath.Join(dir, rootDir, headFile))
+		filesystem.DirExists(filepath.Join(dir, objectsDir)) &&
+		filesystem.FileExists(filepath.Join(dir, indexFile)) &&
+		filesystem.FileExists(filepath.Join(dir, headFile))
 }
 
 func Initialize(dir string) error {
@@ -295,15 +298,15 @@ func Initialize(dir string) error {
 	if err != nil {
 		return err
 	}
-	err = filesystem.MkDirIfIsNotExist(filepath.Join(dir, rootDir, disk.ObjectsDir), os.ModePerm)
+	err = filesystem.MkDirIfIsNotExist(filepath.Join(dir, objectsDir), os.ModePerm)
 	if err != nil {
 		return err
 	}
-	err = filesystem.MkFileIfIsNotExist(filepath.Join(dir, rootDir, file.IndexFile))
+	err = filesystem.MkFileIfIsNotExist(filepath.Join(dir, indexFile))
 	if err != nil {
 		return err
 	}
-	err = filesystem.MkFileIfIsNotExist(filepath.Join(dir, rootDir, headFile))
+	err = filesystem.MkFileIfIsNotExist(filepath.Join(dir, headFile))
 	if err != nil {
 		return err
 	}

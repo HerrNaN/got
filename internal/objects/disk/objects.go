@@ -81,7 +81,10 @@ func (o *Objects) StoreBlob(sum string, bs []byte) error {
 		return errors.Wrapf(err, "couldn't store blob %s", sum)
 	}
 	blob := objects.NewBlob(bs)
-	buf, _ := json.Marshal(blob)
+	buf, err := json.Marshal(blob)
+	if err != nil {
+		return errors.Wrap(err, "couldn't store blob")
+	}
 	return ioutil.WriteFile(file, buf, os.ModePerm)
 }
 
