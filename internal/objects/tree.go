@@ -1,7 +1,9 @@
 package objects
 
 import (
+	"crypto/sha1"
 	"encoding/json"
+	"fmt"
 	"os"
 )
 
@@ -23,4 +25,8 @@ func (t Tree) Type() Type {
 func (t Tree) Content() string {
 	bs, _ := json.Marshal(t)
 	return string(bs)
+}
+
+func (t Tree) Hash() string {
+	return fmt.Sprintf("%x", sha1.Sum([]byte(t.Content())))
 }

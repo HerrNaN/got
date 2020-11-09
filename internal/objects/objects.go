@@ -48,4 +48,5 @@ const (
 type Object interface {
 	Type() Type
 	Content() string
+	Hash() string
 }
