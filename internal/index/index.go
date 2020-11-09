@@ -9,7 +9,7 @@ type Index interface {
 
 	// Add the current contents of a file into the index. The file
 	// path should be relative to the repository root.
-	AddFile(filename string) error
+	AddFile(filename string, sum string) error
 
 	// Add the contents of a tree object (but not the tree object itself)
 	// into the index

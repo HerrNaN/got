@@ -18,7 +18,11 @@ var Cmd = &cobra.Command{
 			fmt.Println(err)
 			return
 		}
-		sum := g.WriteTree()
+		sum, err := g.WriteTree()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 		fmt.Println(sum)
 	},
 }

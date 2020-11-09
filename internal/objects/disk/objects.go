@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
+
 	"got/internal/objects"
 	"got/internal/pkg/filesystem"
 )
@@ -26,13 +28,13 @@ const (
 	ObjectsDir = "objects"
 )
 
-func (o *Objects) HashObject(bs []byte, store bool, t objects.Type) string {
+func (o *Objects) HashObject(bs []byte, store bool, t objects.Type) (string, error) {
 	sum := sha1.Sum(bs)
 	stringSum := fmt.Sprintf("%x", sum)
 	if store {
-		o.StoreBlob(stringSum, bs)
+		return stringSum, o.StoreBlob(stringSum, bs)
 	}
-	return stringSum
+	return stringSum, nil
 }
 
 func (o *Objects) GetBlob(sum string) (objects.Blob, error) {
@@ -70,13 +72,16 @@ func (o *Objects) StoreTree(sum string, entries []objects.TreeEntry) {
 	ioutil.WriteFile(file, buf, os.ModePerm)
 }
 
-func (o *Objects) StoreBlob(sum string, bs []byte) {
+func (o *Objects) StoreBlob(sum string, bs []byte) error {
 	dir := sum[:2]
 	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
-	filesystem.MkDirIfIsNotExist(filepath.Join(o.dir, ObjectsDir, dir), os.ModePerm)
+	err := filesystem.MkDirIfIsNotExist(filepath.Join(o.dir, ObjectsDir, dir), os.ModePerm)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't store blob %s", sum)
+	}
 	blob := objects.NewBlob(bs)
 	buf, _ := json.Marshal(blob)
-	ioutil.WriteFile(file, buf, os.ModePerm)
+	return ioutil.WriteFile(file, buf, os.ModePerm)
 }
 
 func (o *Objects) TypeOf(sum string) (objects.Type, error) {

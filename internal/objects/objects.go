@@ -6,7 +6,7 @@ import (
 
 type Objects interface {
 	// Computes the ID of the object and optionally stores the object as well
-	HashObject(bs []byte, store bool, t Type) string
+	HashObject(bs []byte, store bool, t Type) (string, error)
 
 	// Retrieves a Blob from a given ID
 	GetBlob(sum string) (Blob, error)
@@ -15,7 +15,7 @@ type Objects interface {
 	GetTree(sum string) (Tree, error)
 
 	// Stores content as Blob with a given ID
-	StoreBlob(sum string, bs []byte)
+	StoreBlob(sum string, bs []byte) error
 
 	// Stores content as Tree with a given ID
 	StoreTree(sum string, entries []TreeEntry)

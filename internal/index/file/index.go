@@ -60,13 +60,11 @@ func (i *Index) SortedEntries() []index.Entry {
 	return entries
 }
 
-func (i *Index) AddFile(filename string) error {
-	bs, err := ioutil.ReadFile(filename)
+func (i *Index) AddFile(filename string, sum string) error {
+	stat, err := os.Stat(filename)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't read file %s", filename)
+		return errors.Wrapf(err, "couldn't add file %s to index", filename)
 	}
-	stat, _ := os.Stat(filename)
-	sum := fmt.Sprintf("%x", sha1.Sum(bs))
 	i.Entries[filename] = index.NewEntry(stat.Mode(), objects.TypeBlob, sum, filename)
 	return i.writeToFile()
 }

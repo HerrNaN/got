@@ -28,6 +28,10 @@ func run(cmd *cobra.Command, args []string, write bool) {
 		return
 	}
 	f := args[0]
-	sum := g.HashFile(f, write)
+	sum, err := g.HashFile(f, write)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	fmt.Println(sum)
 }

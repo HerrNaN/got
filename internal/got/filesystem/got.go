@@ -47,8 +47,11 @@ func NewGot() (*Got, error) {
 	}, nil
 }
 
-func (g *Got) HashFile(filename string, store bool) string {
-	bs, _ := ioutil.ReadFile(filename)
+func (g *Got) HashFile(filename string, store bool) (string, error) {
+	bs, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return "", errors.Wrapf(err, "couldn't hash file %s", filename)
+	}
 	return g.Objects.HashObject(bs, store, objects.TypeBlob)
 }
 
@@ -59,19 +62,26 @@ func (g *Got) AddToIndex(filename string) error {
 		return err
 	}
 	rel, err := filepath.Rel(g.dir, abs)
-	return g.Index.AddFile(rel)
+	sum, err := g.HashFile(rel, false)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't add file %s to index", filename)
+	}
+	return g.Index.AddFile(rel, sum)
 }
 
-func (g *Got) WriteTree() string {
+func (g *Got) WriteTree() (string, error) {
 	//fmt.Println("Writing tree...")
 	var buf string
 	for _, e := range g.Index.SortedEntries() {
 		buf += fmt.Sprintf("%s\n", e.String())
 	}
 	buf = buf[:len(buf)-1] // Drop last new line
-	sum := g.Objects.HashObject([]byte(buf), true, objects.TypeTree)
+	sum, err := g.Objects.HashObject([]byte(buf), true, objects.TypeTree)
+	if err != nil {
+		return "", errors.Wrap(err, "couldn't write tree")
+	}
 	//fmt.Printf("%s\n\n", sum)
-	return sum
+	return sum, nil
 }
 
 func (g *Got) ReadTree(sum string) error {
@@ -83,7 +93,7 @@ func (g *Got) ReadTree(sum string) error {
 	return nil
 }
 
-func (g *Got) CommitTree(msg string, tree string, parent string) string {
+func (g *Got) CommitTree(msg string, tree string, parent string) (string, error) {
 	fmt.Printf("Committing %s", tree)
 	if parent != "" {
 		fmt.Printf(" with parent %s", parent)
@@ -97,9 +107,19 @@ func (g *Got) CommitTree(msg string, tree string, parent string) string {
 	buf += fmt.Sprintln("author John Doe <john@doe.com> 0123456789 +0000")
 	buf += fmt.Sprintln("committer John Doe <john@doe.com> 0123456789 +0000")
 	buf += fmt.Sprintf("\n%s", msg)
-	sum := g.Objects.HashObject([]byte(buf), true, objects.TypeCommit)
-	fmt.Printf("%s\n\n", sum)
-	return sum
+	return g.Objects.HashObject([]byte(buf), true, objects.TypeCommit)
+}
+
+func (g *Got) Add(filename string) error {
+	rel, err := g.repoRel(filename)
+	if err != nil {
+		return errors.Wrap(err, "couldn't add file")
+	}
+	hash, err := g.HashFile(rel, true)
+	if err != nil {
+		return errors.Wrap(err, "couldn't add file")
+	}
+	return g.Index.AddFile(rel, hash)
 }
 
 func (g *Got) Status() ([]string, []string, error) {
@@ -163,7 +183,10 @@ func (g *Got) staged(wd string) ([]string, error) {
 			return nil
 		}
 		path = path[len(wd)+1:]
-		sum := g.HashFile(path, false)
+		sum, err := g.HashFile(path, false)
+		if err != nil {
+			return err
+		}
 		indexedSum, err := g.Index.GetEntrySum(path)
 		if err != nil {
 			return nil
@@ -177,6 +200,18 @@ func (g *Got) staged(wd string) ([]string, error) {
 		return nil, err
 	}
 	return staged, nil
+}
+
+func (g *Got) repoRel(path string) (string, error) {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	repoRel, err := filepath.Rel(g.dir, abs)
+	if err != nil {
+		return "", err
+	}
+	return repoRel, nil
 }
 
 func getRepositoryRoot() (string, error) {

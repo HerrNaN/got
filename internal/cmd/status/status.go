@@ -35,6 +35,7 @@ func runStatus(cmd *cobra.Command, args []string) {
 	}
 	fmt.Println()
 	fmt.Println("Changes not staged for commit:")
+	fmt.Println("  (use \"got add <file>\" to update what will be committed)")
 	for _, u := range unstaged {
 		color.Red.Printf("        modified:   %s\n", u)
 	}
