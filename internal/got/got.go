@@ -8,4 +8,6 @@ type Got interface {
 	CommitTree(msg string, tree string, parent string) (string, error)
 	Add(filename string) error
 	Status() ([]string, []string, error)
+	Head() (string, error)
+	Commit(message string) error
 }

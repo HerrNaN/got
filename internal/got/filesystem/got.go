@@ -96,6 +96,7 @@ func (g *Got) ReadTree(sum string) error {
 }
 
 func (g *Got) CommitTree(msg string, tree string, parent string) (string, error) {
+	commit := objects.NewCommit(tree, parent, "John Doe <john@doe.com> 0123456789 +0000", msg)
 	fmt.Printf("Committing %s", tree)
 	if parent != "" {
 		fmt.Printf(" with parent %s", parent)
@@ -109,7 +110,7 @@ func (g *Got) CommitTree(msg string, tree string, parent string) (string, error)
 	buf += fmt.Sprintln("author John Doe <john@doe.com> 0123456789 +0000")
 	buf += fmt.Sprintln("committer John Doe <john@doe.com> 0123456789 +0000")
 	buf += fmt.Sprintf("\n%s", msg)
-	return g.Objects.HashObject([]byte(buf), true, objects.TypeCommit)
+	return g.Objects.StoreCommit(commit)
 }
 
 func (g *Got) Add(filename string) error {
@@ -214,6 +215,38 @@ func (g *Got) repoRel(path string) (string, error) {
 		return "", err
 	}
 	return repoRel, nil
+}
+
+func (g *Got) Head() (string, error) {
+	bs, err := ioutil.ReadFile(filepath.Join(g.dir, headFile))
+	if err != nil {
+		return "", errors.Wrap(err, "couldn't read HEAD file")
+	}
+	return string(bs), nil
+}
+
+func (g *Got) Commit(message string) error {
+	head, err := g.Head()
+	if err != nil {
+		return errors.Wrap(err, "couldn't perform commit")
+	}
+	tree, err := g.WriteTree()
+	if err != nil {
+		return errors.Wrap(err, "couldn't perform commit")
+	}
+	commitHash, err := g.CommitTree(message, tree, head)
+	if err != nil {
+		return errors.Wrap(err, "couldn't perform commit")
+	}
+	err = g.moveHead(commitHash)
+	if err != nil {
+		return errors.Wrap(err, "couldn't perform commit")
+	}
+	return nil
+}
+
+func (g *Got) moveHead(hash string) error {
+	return ioutil.WriteFile(filepath.Join(g.dir, headFile), []byte(hash), os.ModePerm)
 }
 
 func getRepositoryRoot() (string, error) {

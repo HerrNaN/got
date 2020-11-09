@@ -14,11 +14,17 @@ type Objects interface {
 	// Retrieves a Tree from a given ID
 	GetTree(sum string) (Tree, error)
 
+	// Retrieves a Commit from a given ID
+	GetCommit(sum string) (Commit, error)
+
 	// Stores content as Blob with a given ID
 	StoreBlob(sum string, bs []byte) error
 
 	// Stores content as Tree with a given ID
 	StoreTree(sum string, entries []TreeEntry)
+
+	// Stores a commit object
+	StoreCommit(commit Commit) (string, error)
 
 	// Returns the Type of the objects with the given ID
 	TypeOf(sum string) (Type, error)

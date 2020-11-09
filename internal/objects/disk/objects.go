@@ -61,15 +61,16 @@ func (o *Objects) GetTree(sum string) (objects.Tree, error) {
 	return tree, nil
 }
 
-func (o *Objects) StoreTree(sum string, entries []objects.TreeEntry) {
+func (o *Objects) GetCommit(sum string) (objects.Commit, error) {
 	dir := sum[:2]
 	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
-	filesystem.MkDirIfIsNotExist(filepath.Join(o.dir, ObjectsDir, dir), os.ModePerm)
-	tree := objects.Tree{
-		Entries: entries,
+	var commit objects.Commit
+	bs, _ := ioutil.ReadFile(file)
+	err := json.Unmarshal(bs, &commit)
+	if err != nil {
+		return objects.Commit{}, err
 	}
-	buf, _ := json.Marshal(tree)
-	ioutil.WriteFile(file, buf, os.ModePerm)
+	return commit, nil
 }
 
 func (o *Objects) StoreBlob(sum string, bs []byte) error {
@@ -82,6 +83,32 @@ func (o *Objects) StoreBlob(sum string, bs []byte) error {
 	blob := objects.NewBlob(bs)
 	buf, _ := json.Marshal(blob)
 	return ioutil.WriteFile(file, buf, os.ModePerm)
+}
+
+func (o *Objects) StoreTree(sum string, entries []objects.TreeEntry) {
+	dir := sum[:2]
+	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
+	filesystem.MkDirIfIsNotExist(filepath.Join(o.dir, ObjectsDir, dir), os.ModePerm)
+	tree := objects.Tree{
+		Entries: entries,
+	}
+	buf, _ := json.Marshal(tree)
+	ioutil.WriteFile(file, buf, os.ModePerm)
+}
+
+func (o *Objects) StoreCommit(commit objects.Commit) (string, error) {
+	hash := commit.Hash()
+	dir := hash[:2]
+	file := filepath.Join(o.dir, ObjectsDir, dir, hash[2:])
+	err := filesystem.MkDirIfIsNotExist(filepath.Join(o.dir, ObjectsDir, dir), os.ModePerm)
+	if err != nil {
+		return "", errors.Wrapf(err, "couldn't store commit %s", hash)
+	}
+	buf, err := json.Marshal(commit)
+	if err != nil {
+		return "", errors.Wrapf(err, "couldn't store commit %s", hash)
+	}
+	return hash, ioutil.WriteFile(file, buf, os.ModePerm)
 }
 
 func (o *Objects) TypeOf(sum string) (objects.Type, error) {
