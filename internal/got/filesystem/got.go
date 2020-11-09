@@ -21,6 +21,7 @@ const (
 )
 
 type Got struct {
+	gotDir  string
 	dir     string
 	Objects objects.Objects
 	Index   index.Index
@@ -31,18 +32,19 @@ func NewGot() (*Got, error) {
 	if err != nil {
 		return nil, errors.New("repository not initialized")
 	}
-
+	gotDir := filepath.Join(dir, rootDir)
 	if !IsInitialized(dir) {
 		return nil, errors.New("repository not initialized")
 	}
-	i, err := file.ReadFromFile(filepath.Join(dir, rootDir))
+	i, err := file.ReadFromFile(gotDir)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Got{
+		gotDir:  gotDir,
 		dir:     dir,
-		Objects: disk.NewObjects(dir),
+		Objects: disk.NewObjects(gotDir),
 		Index:   i,
 	}, nil
 }
