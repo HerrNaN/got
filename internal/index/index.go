@@ -21,6 +21,10 @@ type Index interface {
 	// Returns true if the index contains an entry for a given file.
 	HasEntryFor(filename string) bool
 
+	// Gets the checksum of the entry of the given file.
 	GetEntrySum(filename string) (string, error)
+
+	// Checks if a directory has any descendants that are part of the current
+	// index. That is any staged descendants.
 	HasDescendantsInIndex(dir string) bool
 }
