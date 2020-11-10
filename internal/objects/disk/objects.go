@@ -1,7 +1,6 @@
 package disk
 
 import (
-	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -27,19 +26,6 @@ func NewObjects(dir string) *Objects {
 const (
 	ObjectsDir = "objects"
 )
-
-// NOTE: Stores the objects as a blob.
-func (o *Objects) HashObject(bs []byte, store bool) (string, error) {
-	sum := sha1.Sum(bs)
-	stringSum := fmt.Sprintf("%x", sum)
-	if store {
-		err := o.StoreBlob(stringSum, bs)
-		if err != nil {
-			return "", errors.Wrapf(err, "couldn't hash object")
-		}
-	}
-	return stringSum, nil
-}
 
 func (o *Objects) GetBlob(sum string) (objects.Blob, error) {
 	dir := sum[:2]

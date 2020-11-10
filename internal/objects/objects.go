@@ -5,9 +5,6 @@ import (
 )
 
 type Objects interface {
-	// Computes the ID of the object and optionally stores the object as well
-	HashObject(bs []byte, store bool) (string, error)
-
 	// Retrieves a Blob from a given ID
 	GetBlob(sum string) (Blob, error)
 
