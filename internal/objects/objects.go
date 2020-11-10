@@ -21,7 +21,7 @@ type Objects interface {
 	StoreBlob(sum string, bs []byte) error
 
 	// Stores content as Tree with a given ID
-	StoreTree(sum string, entries []TreeEntry)
+	StoreTree(sum string, entries []TreeEntry) error
 
 	// Stores a commit object
 	StoreCommit(commit Commit) (string, error)
