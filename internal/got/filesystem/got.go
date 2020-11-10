@@ -57,7 +57,15 @@ func (g *Got) HashFile(filename string, store bool) (string, error) {
 	if err != nil {
 		return "", errors.Wrapf(err, "couldn't hash file %s", filename)
 	}
-	return g.Objects.HashObject(bs, store, objects.TypeBlob)
+	blob := objects.NewBlob(bs)
+	sum := blob.Hash()
+	if store {
+		err = g.Objects.StoreBlob(sum, bs)
+		if err != nil {
+			return "", errors.Wrapf(err, "couldn't hash file %s", filename)
+		}
+	}
+	return sum, nil
 }
 
 func (g *Got) AddToIndex(filename string) error {
@@ -75,17 +83,23 @@ func (g *Got) AddToIndex(filename string) error {
 }
 
 func (g *Got) WriteTree() (string, error) {
-	//fmt.Println("Writing tree...")
-	var buf string
+	var entries []objects.TreeEntry
 	for _, e := range g.Index.SortedEntries() {
-		buf += fmt.Sprintf("%s\n", e.String())
+		entries = append(entries, objects.TreeEntry{
+			Mode:     e.Perm,
+			Type:     e.EntryType,
+			Name:     e.Name,
+			Checksum: e.Sum,
+		})
 	}
-	buf = buf[:len(buf)-1] // Drop last new line
-	sum, err := g.Objects.HashObject([]byte(buf), true, objects.TypeTree)
+	tree := objects.Tree{
+		Entries: entries,
+	}
+	sum := tree.Hash()
+	err := g.Objects.StoreTree(sum, tree.Entries)
 	if err != nil {
-		return "", errors.Wrap(err, "couldn't write tree")
+		return "", errors.Wrapf(err, "couldn't write tree")
 	}
-	//fmt.Printf("%s\n\n", sum)
 	return sum, nil
 }
 

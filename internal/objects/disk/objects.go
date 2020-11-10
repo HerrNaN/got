@@ -28,7 +28,8 @@ const (
 	ObjectsDir = "objects"
 )
 
-func (o *Objects) HashObject(bs []byte, store bool, t objects.Type) (string, error) {
+// NOTE: Stores the objects as a blob.
+func (o *Objects) HashObject(bs []byte, store bool) (string, error) {
 	sum := sha1.Sum(bs)
 	stringSum := fmt.Sprintf("%x", sum)
 	if store {
