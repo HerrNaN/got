@@ -42,36 +42,6 @@ func (o *Objects) GetBlob(sum string) (objects.Blob, error) {
 	return obj, nil
 }
 
-func (o *Objects) GetTree(sum string) (objects.Tree, error) {
-	dir := sum[:2]
-	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
-	var tree objects.Tree
-	bs, err := ioutil.ReadFile(file)
-	if err != nil {
-		return objects.Tree{}, errors.Wrapf(err, "couldn't get tree %s", sum)
-	}
-	err = json.Unmarshal(bs, &tree)
-	if err != nil {
-		return objects.Tree{}, errors.Wrapf(err, "couldn't get tree %s", sum)
-	}
-	return tree, nil
-}
-
-func (o *Objects) GetCommit(sum string) (objects.Commit, error) {
-	dir := sum[:2]
-	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
-	var commit objects.Commit
-	bs, err := ioutil.ReadFile(file)
-	if err != nil {
-		return objects.Commit{}, errors.Wrapf(err, "couldn't get commit %s", sum)
-	}
-	err = json.Unmarshal(bs, &commit)
-	if err != nil {
-		return objects.Commit{}, errors.Wrapf(err, "couldn't get commit %s", sum)
-	}
-	return commit, nil
-}
-
 func (o *Objects) StoreBlob(sum string, bs []byte) error {
 	dir := sum[:2]
 	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
@@ -85,6 +55,21 @@ func (o *Objects) StoreBlob(sum string, bs []byte) error {
 		return errors.Wrap(err, "couldn't store blob")
 	}
 	return ioutil.WriteFile(file, buf, os.ModePerm)
+}
+
+func (o *Objects) GetTree(sum string) (objects.Tree, error) {
+	dir := sum[:2]
+	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
+	var tree objects.Tree
+	bs, err := ioutil.ReadFile(file)
+	if err != nil {
+		return objects.Tree{}, errors.Wrapf(err, "couldn't get tree %s", sum)
+	}
+	err = json.Unmarshal(bs, &tree)
+	if err != nil {
+		return objects.Tree{}, errors.Wrapf(err, "couldn't get tree %s", sum)
+	}
+	return tree, nil
 }
 
 func (o *Objects) StoreTree(sum string, entries []objects.TreeEntry) error {
@@ -106,6 +91,21 @@ func (o *Objects) StoreTree(sum string, entries []objects.TreeEntry) error {
 		return errors.Wrapf(err, "couldn't store tree %s", sum)
 	}
 	return nil
+}
+
+func (o *Objects) GetCommit(sum string) (objects.Commit, error) {
+	dir := sum[:2]
+	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
+	var commit objects.Commit
+	bs, err := ioutil.ReadFile(file)
+	if err != nil {
+		return objects.Commit{}, errors.Wrapf(err, "couldn't get commit %s", sum)
+	}
+	err = json.Unmarshal(bs, &commit)
+	if err != nil {
+		return objects.Commit{}, errors.Wrapf(err, "couldn't get commit %s", sum)
+	}
+	return commit, nil
 }
 
 func (o *Objects) StoreCommit(commit objects.Commit) (string, error) {
