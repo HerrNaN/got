@@ -116,6 +116,14 @@ func (g *Got) CommitTree(msg string, tree string, parent string) (string, error)
 	return g.Objects.StoreCommit(commit)
 }
 
+func (g *Got) Head() (string, error) {
+	bs, err := ioutil.ReadFile(filepath.Join(g.dir, headFile))
+	if err != nil {
+		return "", errors.Wrap(err, "couldn't read HEAD file")
+	}
+	return string(bs), nil
+}
+
 func (g *Got) Add(filename string) error {
 	rel, err := g.repoRel(filename)
 	if err != nil {
@@ -218,14 +226,6 @@ func (g *Got) repoRel(path string) (string, error) {
 		return "", err
 	}
 	return repoRel, nil
-}
-
-func (g *Got) Head() (string, error) {
-	bs, err := ioutil.ReadFile(filepath.Join(g.dir, headFile))
-	if err != nil {
-		return "", errors.Wrap(err, "couldn't read HEAD file")
-	}
-	return string(bs), nil
 }
 
 func (g *Got) Commit(message string) error {
