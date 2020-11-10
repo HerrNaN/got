@@ -21,6 +21,7 @@ const (
 )
 
 type Index struct {
+	// The .got directory
 	Dir      string
 	Version  int
 	Entries  index.EntryMap
@@ -92,7 +93,7 @@ func (i *Index) GetEntryFor(name string) (index.Entry, error) {
 func (i *Index) GetEntry(sum string, name string) (index.Entry, error) {
 	e, err := i.GetEntryFor(name)
 	if err != nil {
-		return index.Entry{}, err
+		return index.Entry{}, errors.Wrapf(err, "couldn't get entry %s", name)
 	}
 	if e.Sum != sum {
 		return index.Entry{}, fmt.Errorf("found entry does not match sum %s", sum)
@@ -136,6 +137,13 @@ func (i *Index) calculateChecksum() string {
 
 func (i *Index) writeToFile() error {
 	i.updateChecksum()
-	bs, _ := json.Marshal(*i)
-	return ioutil.WriteFile(filepath.Join(i.Dir, IndexFile), bs, os.ModePerm)
+	bs, err := json.Marshal(*i)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't write index to file")
+	}
+	err = ioutil.WriteFile(filepath.Join(i.Dir, IndexFile), bs, os.ModePerm)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't write index to file")
+	}
+	return nil
 }
