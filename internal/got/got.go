@@ -24,6 +24,9 @@ type Got interface {
 	// empty.
 	CommitTree(msg string, tree string, parent string) (string, error)
 
+	// Returns the checksum of the commit that the head is currently on.
+	Head() (string, error)
+
 	// Creates a blob object from the given file and then adds the file into
 	// the index.
 	Add(filename string) error
@@ -34,9 +37,6 @@ type Got interface {
 	//   staged = Files which are up to date in the index.
 	//   unstaged = Files that are not up to date in the index.
 	Status() ([]string, []string, error)
-
-	// Returns the checksum of the commit that the head is currently on.
-	Head() (string, error)
 
 	// Commits the files in the index to the repository by:
 	// 1. Writing the contents of the index into a tree object
