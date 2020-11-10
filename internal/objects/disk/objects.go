@@ -123,5 +123,9 @@ func (o *Objects) TypeOf(sum string) (objects.Type, error) {
 	if err == nil {
 		return objects.TypeTree, nil
 	}
+	_, err = o.GetCommit(sum)
+	if err == nil {
+		return objects.TypeCommit, nil
+	}
 	return "", fmt.Errorf("couldn't get type of %s", sum)
 }
