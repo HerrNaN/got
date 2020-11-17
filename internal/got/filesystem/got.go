@@ -176,7 +176,7 @@ func (g *Got) Status() (*status.Status, error) {
 		case diff.FileEditTypeDelete:
 			tree.AddFile(d.SrcPath, status.Changes{Head: status.Deleted}, true)
 		case diff.FileEditTypeCreate:
-			tree.AddFile(d.DstPath, status.Changes{Head: status.Modified}, true)
+			tree.AddFile(d.DstPath, status.Changes{Head: status.Created}, true)
 		}
 	}
 
@@ -187,7 +187,7 @@ func (g *Got) Status() (*status.Status, error) {
 		case diff.FileEditTypeDelete:
 			tree.AddFile(d.SrcPath, status.Changes{Worktree: status.Deleted}, true)
 		case diff.FileEditTypeCreate:
-			tree.AddFile(d.DstPath, status.Changes{Worktree: status.Modified}, true)
+			tree.AddFile(d.DstPath, status.Changes{Worktree: status.Created}, true)
 		}
 	}
 
