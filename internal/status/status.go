@@ -40,6 +40,7 @@ func (s *Status) String() string {
 		for _, staged := range s.staged {
 			fmt.Fprint(buf, color.Green.Sprintf("        %s   %s\n", *staged.changeType, staged.path))
 		}
+		fmt.Fprintln(buf)
 	}
 
 	if len(s.unstaged) > 0 {
@@ -48,6 +49,7 @@ func (s *Status) String() string {
 		for _, unstaged := range s.unstaged {
 			fmt.Fprint(buf, color.Red.Sprintf("        %s   %s\n", *unstaged.changeType, unstaged.path))
 		}
+		fmt.Fprintln(buf)
 	}
 
 	if len(s.untracked) > 0 {
