@@ -35,6 +35,10 @@ type Got interface {
 	// the index.
 	Add(filename string) error
 
+	// Unstages a file by removing it from the index and is replaced by an
+	// earlier version of the file if one exists in the head tree.
+	Unstage(filename string) error
+
 	// Returns a list of untracked, staged and unstaged files from the working directory.
 	// NOTE:
 	//   tracked = Files that are tracked by the got repository.

@@ -158,6 +158,27 @@ func (g *Got) Add(filename string) error {
 	return g.Index.AddFile(rel, hash)
 }
 
+func (g *Got) Unstage(filename string) error {
+	filename, err := g.repoRel(filename)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't unstage %s", filename)
+	}
+	headTree, err := g.headTree()
+	if err != nil {
+		return errors.Wrapf(err, "couldn't unstage %s", filename)
+	}
+	for _, te := range headTree.Entries {
+		if te.Name == filename {
+			return g.Index.AddFile(te.Name, te.Checksum)
+		}
+	}
+	err = g.Index.RemoveFile(filename)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't unstage %s", filename)
+	}
+	return nil
+}
+
 func (g *Got) Status() (*status.Status, error) {
 	headDiff, err := g.diffHead()
 	if err != nil {

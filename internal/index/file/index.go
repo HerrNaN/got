@@ -70,6 +70,11 @@ func (i *Index) AddFile(filename string, sum string) error {
 	return i.writeToFile()
 }
 
+func (i *Index) RemoveFile(filename string) error {
+	delete(i.Entries, filename)
+	return i.writeToFile()
+}
+
 func (i *Index) AddTreeContents(tree objects.Tree) error {
 	for _, e := range tree.Entries {
 		i.Entries[e.Name] = index.NewEntry(e.Mode, e.Type, e.Checksum, e.Name)

@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	"got/internal/cmd/restore"
+
 	"got/internal/cmd/commit"
 
 	"github.com/spf13/cobra"
@@ -34,4 +36,5 @@ func init() {
 	GotCmd.AddCommand(add.Cmd)
 	GotCmd.AddCommand(status.Cmd)
 	GotCmd.AddCommand(commit.Cmd)
+	GotCmd.AddCommand(restore.Cmd)
 }

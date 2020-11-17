@@ -11,6 +11,9 @@ type Index interface {
 	// path should be relative to the repository root.
 	AddFile(filename string, sum string) error
 
+	// Removes a file from the index
+	RemoveFile(filename string) error
+
 	// Add the contents of a tree object (but not the tree object itself)
 	// into the index
 	AddTreeContents(tree objects.Tree) error
