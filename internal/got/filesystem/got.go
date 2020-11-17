@@ -1,15 +1,23 @@
 package filesystem
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"got/internal/status"
+
+	"got/internal/index/file"
+
+	"got/internal/diff/simple"
+
+	"got/internal/diff"
+
 	"github.com/pkg/errors"
 
 	"got/internal/index"
-	"got/internal/index/file"
 	"got/internal/objects"
 	"got/internal/objects/disk"
 	"got/internal/pkg/filesystem"
@@ -150,84 +158,178 @@ func (g *Got) Add(filename string) error {
 	return g.Index.AddFile(rel, hash)
 }
 
-func (g *Got) Status() ([]string, []string, error) {
-	staged, err := g.staged(g.dir)
-	if err != nil {
-		return nil, nil, err
-	}
-	unstaged, err := g.unstaged(g.dir)
-	if err != nil {
-		return nil, nil, err
-	}
-	return staged, unstaged, nil
-}
-
-func (g *Got) unstaged(wd string) ([]string, error) {
-	var unstaged []string
-	err := filepath.Walk(wd, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if path == wd {
-			return nil
-		}
-		path = path[len(wd)+1:]
-
-		// Ignore .git and .got directories
-		if info.Name() == ".git" || info.Name() == ".got" {
-			return filepath.SkipDir
-		}
-
-		// Don't list the contents of a directory that doesn't have any staged files
-		if info.IsDir() && !g.Index.HasDescendantsInIndex(path) {
-			unstaged = append(unstaged, path+string(filepath.Separator))
-			return filepath.SkipDir
-		}
-
-		// Only show the file paths
-		if info.IsDir() {
-			return nil
-		}
-
-		unstaged = append(unstaged, path)
-		return nil
-	})
+func (g *Got) Status() (*status.Status, error) {
+	headDiff, err := g.diffHead()
 	if err != nil {
 		return nil, err
 	}
-	return unstaged, nil
+	workTreeDiff, untracked, err := g.diffFiles()
+	if err != nil {
+		return nil, err
+	}
+	tree := status.NewTree()
+
+	for _, d := range headDiff {
+		switch d.EditType {
+		case diff.FileEditTypeInPlace:
+			tree.AddFile(d.SrcPath, status.Changes{Head: status.Modified}, true)
+		case diff.FileEditTypeDelete:
+			tree.AddFile(d.SrcPath, status.Changes{Head: status.Deleted}, true)
+		case diff.FileEditTypeCreate:
+			tree.AddFile(d.DstPath, status.Changes{Head: status.Modified}, true)
+		}
+	}
+
+	for _, d := range workTreeDiff {
+		switch d.EditType {
+		case diff.FileEditTypeInPlace:
+			tree.AddFile(d.SrcPath, status.Changes{Worktree: status.Modified}, true)
+		case diff.FileEditTypeDelete:
+			tree.AddFile(d.SrcPath, status.Changes{Worktree: status.Deleted}, true)
+		case diff.FileEditTypeCreate:
+			tree.AddFile(d.DstPath, status.Changes{Worktree: status.Modified}, true)
+		}
+	}
+
+	for _, d := range untracked {
+		tree.AddFile(d, status.Changes{}, false)
+	}
+
+	return tree.GetStatus(), nil
 }
 
-func (g *Got) staged(wd string) ([]string, error) {
-	var staged []string
-	err := filepath.Walk(wd, func(path string, info os.FileInfo, err error) error {
+func (g *Got) diffHead() ([]*diff.FileDiff, error) {
+	var diffs []*diff.FileDiff
+
+	headTree, err := g.headTree()
+	if err != nil {
+		return nil, err
+	}
+	for _, ie := range g.Index.SortedEntries() {
+		d, err := g.diffEntryAgainstHead(ie, headTree)
+		if err != nil {
+			return nil, err
+		}
+		if d == nil {
+			d = diff.NewCreateFileDiff(ie.Perm, ie.Sum, ie.Name)
+		}
+		diffs = append(diffs, d)
+	}
+	for _, te := range headTree.Entries {
+		if !g.Index.HasEntryFor(te.Name) {
+			diffs = append(diffs, diff.NewDeleteFileDiff(te.Mode, te.Checksum, te.Name))
+		}
+	}
+	return diffs, nil
+}
+
+type fileInfo struct {
+	name string
+	hash string
+	perm os.FileMode
+}
+
+func (g *Got) diffFiles() ([]*diff.FileDiff, []string, error) {
+	var untracked []string
+	var diffs []*diff.FileDiff
+	var files []*fileInfo
+	err := filepath.Walk(g.dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if path == wd {
-			return nil
-		}
-		if info.IsDir() {
-			return nil
-		}
-		path = path[len(wd)+1:]
-		sum, err := g.HashFile(path, false)
+		path, err = g.repoRel(path)
 		if err != nil {
 			return err
 		}
-		indexedSum, err := g.Index.GetEntrySum(path)
-		if err != nil {
-			return nil
+		if path == ".git" || path == ".got" {
+			return filepath.SkipDir
 		}
-		if sum == indexedSum {
-			staged = append(staged, path)
+		if !info.IsDir() {
+			bs, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			hash := fmt.Sprintf("%x", sha1.Sum(bs))
+			files = append(files, &fileInfo{
+				name: path,
+				hash: hash,
+				perm: info.Mode(),
+			})
 		}
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return staged, nil
+
+	for _, ie := range g.Index.SortedEntries() {
+		d, err := g.diffEntryAgainstFiles(ie, files)
+		if err != nil {
+			return nil, nil, err
+		}
+		if d == nil {
+			d = diff.NewCreateFileDiff(ie.Perm, ie.Sum, ie.Name)
+		}
+		diffs = append(diffs, d)
+	}
+	for _, f := range files {
+		if !g.Index.HasEntryFor(f.name) {
+			untracked = append(untracked, f.name)
+		}
+	}
+	return diffs, untracked, nil
+}
+
+func (g *Got) diffEntryAgainstHead(ie index.Entry, headTree *objects.Tree) (*diff.FileDiff, error) {
+	d := simple.Diff{}
+	for _, te := range headTree.Entries {
+		if ie.Name != te.Name {
+			continue
+		}
+		if ie.Sum == te.Checksum {
+			return diff.NewUnmodifiedFileDiff(ie.Perm, ie.Sum, ie.Name), nil
+		}
+		iBlob, err := g.Objects.GetBlob(ie.Sum)
+		if err != nil {
+			return nil, err
+		}
+		tBlob, err := g.Objects.GetBlob(te.Checksum)
+		if err != nil {
+			return nil, err
+		}
+		_, err = d.DiffFiles([]byte(iBlob.Contents), []byte(tBlob.Contents))
+		if err != nil {
+			return nil, err
+		}
+		return diff.NewInPlaceFileDiff(te.Mode, ie.Perm, te.Checksum, ie.Sum, ie.Name), nil
+	}
+	return nil, nil
+}
+
+func (g *Got) diffEntryAgainstFiles(ie index.Entry, files []*fileInfo) (*diff.FileDiff, error) {
+	d := simple.Diff{}
+	for _, f := range files {
+		if ie.Name != f.name {
+			continue
+		}
+		if ie.Sum == f.hash {
+			return diff.NewUnmodifiedFileDiff(f.perm, f.hash, f.name), nil
+		}
+		iBlob, err := g.Objects.GetBlob(ie.Sum)
+		if err != nil {
+			return nil, err
+		}
+		contents, err := ioutil.ReadFile(f.name)
+		if err != nil {
+			return nil, err
+		}
+		_, err = d.DiffFiles([]byte(iBlob.Contents), contents)
+		if err != nil {
+			return nil, err
+		}
+		return diff.NewInPlaceFileDiff(f.perm, ie.Perm, f.hash, ie.Sum, f.name), nil
+	}
+	return nil, nil
 }
 
 func (g *Got) repoRel(path string) (string, error) {
@@ -266,6 +368,48 @@ func (g *Got) moveHead(hash string) error {
 	return ioutil.WriteFile(filepath.Join(g.dir, headFile), []byte(hash), os.ModePerm)
 }
 
+// Gets list of files that are currently tracked by the repository.
+func (g *Got) trackedFiles() ([]string, error) {
+	var trackedFiles []string
+	head, err := g.Head()
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't get tracked files")
+	}
+	if head == "" {
+		return trackedFiles, nil
+	}
+	commit, err := g.Objects.GetCommit(head)
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't get tracked files")
+	}
+	tree, err := g.Objects.GetTree(commit.TreeHash)
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't get tracked files")
+	}
+	for _, te := range tree.Entries {
+		trackedFiles = append(trackedFiles, te.Name)
+	}
+	return trackedFiles, nil
+}
+
+func (g *Got) headTree() (*objects.Tree, error) {
+	head, err := g.Head()
+	if err != nil {
+		return nil, err
+	}
+	if head == "" {
+		return nil, nil
+	}
+	c, err := g.Objects.GetCommit(head)
+	if err != nil {
+		return nil, err
+	}
+	tree, err := g.Objects.GetTree(c.TreeHash)
+	return &tree, err
+
+}
+
+// Returns the closest ascendant that contains a '.got' directory
 func getRepositoryRoot() (string, error) {
 	wd, err := os.Getwd()
 	if err != nil {

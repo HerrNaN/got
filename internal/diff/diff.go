@@ -8,12 +8,14 @@ import (
 	"github.com/fatih/color"
 )
 
-type Diff interface {
+type Differ interface {
 	DiffBytes(a []byte, b []byte) BytesDiff
+	FilesDiff(a []byte, b []byte) bool
+	DiffFiles(a []byte, b []byte) *FileDiff
 }
 
 type FileDiff struct {
-	EditType fileEditType
+	EditType FileEditType
 	SrcPerm  os.FileMode
 	DstPerm  os.FileMode
 	SrcHash  string
@@ -22,8 +24,8 @@ type FileDiff struct {
 	DstPath  string
 }
 
-func NewInPlaceFileDiff(oldPerm, newPerm os.FileMode, oldHash, newHash string, path string) FileDiff {
-	return FileDiff{
+func NewInPlaceFileDiff(oldPerm, newPerm os.FileMode, oldHash, newHash string, path string) *FileDiff {
+	return &FileDiff{
 		EditType: FileEditTypeInPlace,
 		SrcPerm:  oldPerm,
 		DstPerm:  newPerm,
@@ -34,8 +36,8 @@ func NewInPlaceFileDiff(oldPerm, newPerm os.FileMode, oldHash, newHash string, p
 	}
 }
 
-func NewCreateFileDiff(perm os.FileMode, hash string, path string) FileDiff {
-	return FileDiff{
+func NewCreateFileDiff(perm os.FileMode, hash string, path string) *FileDiff {
+	return &FileDiff{
 		EditType: FileEditTypeCreate,
 		SrcPerm:  0,
 		DstPerm:  perm,
@@ -46,14 +48,37 @@ func NewCreateFileDiff(perm os.FileMode, hash string, path string) FileDiff {
 	}
 }
 
-type fileEditType string
+func NewDeleteFileDiff(perm os.FileMode, hash string, path string) *FileDiff {
+	return &FileDiff{
+		EditType: FileEditTypeDelete,
+		SrcPerm:  perm,
+		DstPerm:  0,
+		SrcHash:  hash,
+		DstHash:  "",
+		SrcPath:  path,
+		DstPath:  "",
+	}
+}
+
+func NewUnmodifiedFileDiff(perm os.FileMode, hash string, path string) *FileDiff {
+	return &FileDiff{
+		EditType: FileEditTypeUnmodified,
+		SrcPerm:  perm,
+		DstPerm:  perm,
+		SrcHash:  hash,
+		DstHash:  hash,
+		SrcPath:  path,
+		DstPath:  path,
+	}
+}
+
+type FileEditType string
 
 const (
-	FileEditTypeInPlace fileEditType = "in-place edit"
-	FileEditTypeCopy    fileEditType = "copy-edit"
-	FileEditTypeRename  fileEditType = "rename-edit"
-	FileEditTypeCreate  fileEditType = "create"
-	FileEditTypeDelete  fileEditType = "delete"
+	FileEditTypeInPlace    FileEditType = "modified"
+	FileEditTypeCreate     FileEditType = "created"
+	FileEditTypeDelete     FileEditType = "deleted"
+	FileEditTypeUnmodified FileEditType = "unmodified"
 )
 
 type BytesDiff []LineEdit
@@ -74,13 +99,13 @@ func (bd BytesDiff) String() string {
 }
 
 type LineEdit struct {
-	EditType editType
+	EditType EditType
 	Text     string
 	ALine    int
 	BLine    int
 }
 
-func NewLineEdit(editType editType, text string, ALine int, BLine int) LineEdit {
+func NewLineEdit(editType EditType, text string, ALine int, BLine int) LineEdit {
 	return LineEdit{EditType: editType, Text: text, ALine: ALine, BLine: BLine}
 }
 
@@ -96,10 +121,10 @@ func (e LineEdit) String() string {
 	return fmt.Sprintf("%v %-1s %-1s %-1s", e.EditType, aline, bline, e.Text)
 }
 
-type editType string
+type EditType string
 
 const (
-	INS editType = "+"
-	DEL editType = "-"
-	EQL editType = " "
+	INS EditType = "+"
+	DEL EditType = "-"
+	EQL EditType = " "
 )

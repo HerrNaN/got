@@ -1,5 +1,9 @@
 package got
 
+import (
+	"got/internal/status"
+)
+
 type Got interface {
 
 	// Calculates the checksum for the contents of a given file and optionally
@@ -31,12 +35,12 @@ type Got interface {
 	// the index.
 	Add(filename string) error
 
-	// Returns a list of staged and unstaged files from the working directory.
+	// Returns a list of untracked, staged and unstaged files from the working directory.
 	// NOTE:
 	//   tracked = Files that are tracked by the got repository.
 	//   staged = Files which are up to date in the index.
 	//   unstaged = Files that are not up to date in the index.
-	Status() ([]string, []string, error)
+	Status() (*status.Status, error)
 
 	// Commits the files in the index to the repository by:
 	// 1. Writing the contents of the index into a tree object

@@ -1,8 +1,11 @@
 package simple
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"got/internal/diff"
 )
@@ -13,13 +16,34 @@ func (d Diff) DiffBytes(a []byte, b []byte) diff.BytesDiff {
 	return diffBytes(a, b)
 }
 
-type editType string
+func (d Diff) FilesDiff(a []byte, b []byte) bool {
+	oldHash := fmt.Sprintf("%x", sha1.Sum(a))
+	newHash := fmt.Sprintf("%x", sha1.Sum(b))
+	return oldHash != newHash
+}
 
-const (
-	INS editType = "+"
-	DEL editType = "-"
-	EQL editType = " "
-)
+func (d Diff) DiffFiles(a, b []byte) (diff.FileEditType, error) {
+	if a == nil && b == nil {
+		return "", nil
+	}
+	return d.diffFiles(a, b)
+}
+
+func (d Diff) diffFiles(a []byte, b []byte) (diff.FileEditType, error) {
+	if a == nil {
+		return diff.FileEditTypeCreate, nil
+	}
+	if b == nil {
+		return diff.FileEditTypeDelete, nil
+	}
+	byteDiff := diffBytes(a, b)
+	for _, le := range byteDiff {
+		if le.EditType != diff.EQL {
+			return diff.FileEditTypeInPlace, nil
+		}
+	}
+	return "", errors.New("couldn't determine diff type")
+}
 
 type point struct {
 	A int
