@@ -35,6 +35,9 @@ func restoreRun(cmd *cobra.Command, args []string, staged bool) {
 			fmt.Println(err)
 		}
 	} else {
-		//g.Discard(filename)
+		err := g.Discard(filename)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }

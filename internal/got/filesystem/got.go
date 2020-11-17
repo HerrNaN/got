@@ -158,10 +158,10 @@ func (g *Got) Add(filename string) error {
 	return g.Index.AddFile(rel, hash)
 }
 
-func (g *Got) Unstage(filename string) error {
-	filename, err := g.repoRel(filename)
+func (g *Got) Unstage(path string) error {
+	filename, err := g.repoRel(path)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't unstage %s", filename)
+		return errors.Wrapf(err, "couldn't unstage %s", path)
 	}
 	headTree, err := g.headTree()
 	if err != nil {
@@ -175,6 +175,33 @@ func (g *Got) Unstage(filename string) error {
 	err = g.Index.RemoveFile(filename)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't unstage %s", filename)
+	}
+	return nil
+}
+
+func (g *Got) Discard(path string) error {
+	filename, err := g.repoRel(path)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't discard changes in %s", path)
+	}
+	headTree, err := g.headTree()
+	if err != nil {
+		return errors.Wrapf(err, "couldn't discard changes in %s", filename)
+	}
+	for _, te := range headTree.Entries {
+		if te.Name == filename {
+			blob, err := g.Objects.GetBlob(te.Checksum)
+			if err != nil {
+				return errors.Wrapf(err, "couldn't discard changes in %s", filename)
+			}
+			err = ioutil.WriteFile(path, []byte(blob.Contents), te.Mode)
+			if err != nil {
+				return errors.Wrapf(err, "couldn't discard changes in %s", filename)
+			}
+		}
+	}
+	if !g.Index.HasEntryFor(filename) {
+		return fmt.Errorf("%s did not match any file(s) know to got", path)
 	}
 	return nil
 }

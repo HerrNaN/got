@@ -39,6 +39,9 @@ type Got interface {
 	// earlier version of the file if one exists in the head tree.
 	Unstage(filename string) error
 
+	// Discards the changes to a file in the working tree.
+	Discard(filename string) error
+
 	// Returns a list of untracked, staged and unstaged files from the working directory.
 	// NOTE:
 	//   tracked = Files that are tracked by the got repository.
