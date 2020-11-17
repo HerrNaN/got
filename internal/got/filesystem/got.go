@@ -174,60 +174,86 @@ func (g *Got) addFile(filename string) error {
 	return nil
 }
 
-func (g *Got) UnstageMany(paths []string) error {
+func (g *Got) UnstagePath(paths ...string) error {
 	for _, p := range paths {
-		err := g.UnstagePath(p)
+		err := filepath.Walk(p, func(localPath string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				return nil
+			}
+			return g.unstageFile(localPath)
+		})
 		if err != nil {
-			return errors.Wrapf(err, "couldn't unstage path %s")
+			return errors.Wrapf(err, "couldn't unstage path %s", p)
 		}
 	}
 	return nil
 }
 
-func (g *Got) Unstage(path string) error {
-	filename, err := g.repoRel(path)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't unstage %s", path)
-	}
-	headTree, err := g.headTree()
+func (g *Got) unstageFile(filename string) error {
+	rel, err := g.repoRel(filename)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't unstage %s", filename)
 	}
+	headTree, err := g.headTree()
+	if err != nil {
+		return errors.Wrapf(err, "couldn't unstage %s", rel)
+	}
 	for _, te := range headTree.Entries {
-		if te.Name == filename {
+		if te.Name == rel {
 			return g.Index.AddFile(te.Name, te.Checksum)
 		}
 	}
-	err = g.Index.RemoveFile(filename)
+	err = g.Index.RemoveFile(rel)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't unstage %s", filename)
+		return errors.Wrapf(err, "couldn't unstage %s", rel)
 	}
 	return nil
 }
 
-func (g *Got) Discard(path string) error {
-	filename, err := g.repoRel(path)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't discard changes in %s", path)
+func (g *Got) DiscardPath(paths ...string) error {
+	for _, p := range paths {
+		err := filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				return nil
+			}
+			return g.discardFile(path)
+		})
+		if err != nil {
+			return errors.Wrapf(err, "couldn't discard path %s", p)
+		}
 	}
-	headTree, err := g.headTree()
+	return nil
+}
+
+func (g *Got) discardFile(filename string) error {
+	rel, err := g.repoRel(filename)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't discard changes in %s", filename)
 	}
+	headTree, err := g.headTree()
+	if err != nil {
+		return errors.Wrapf(err, "couldn't discard changes in %s", rel)
+	}
 	for _, te := range headTree.Entries {
-		if te.Name == filename {
+		if te.Name == rel {
 			blob, err := g.Objects.GetBlob(te.Checksum)
 			if err != nil {
-				return errors.Wrapf(err, "couldn't discard changes in %s", filename)
+				return errors.Wrapf(err, "couldn't discard changes in %s", rel)
 			}
-			err = ioutil.WriteFile(path, []byte(blob.Contents), te.Mode)
+			err = ioutil.WriteFile(filename, []byte(blob.Contents), te.Mode)
 			if err != nil {
-				return errors.Wrapf(err, "couldn't discard changes in %s", filename)
+				return errors.Wrapf(err, "couldn't discard changes in %s", rel)
 			}
 		}
 	}
-	if !g.Index.HasEntryFor(filename) {
-		return fmt.Errorf("%s did not match any file(s) know to got", path)
+	if !g.Index.HasEntryFor(rel) {
+		return fmt.Errorf("%s did not match any file(s) know to got", filename)
 	}
 	return nil
 }

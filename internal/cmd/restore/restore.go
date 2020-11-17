@@ -27,15 +27,13 @@ func restoreRun(cmd *cobra.Command, args []string, staged bool) {
 		return
 	}
 
-	filename := args[0]
-
 	if staged {
-		err := g.Unstage(filename)
+		err := g.UnstagePath(args...)
 		if err != nil {
 			fmt.Println(err)
 		}
 	} else {
-		err := g.Discard(filename)
+		err := g.DiscardPath(args...)
 		if err != nil {
 			fmt.Println(err)
 		}

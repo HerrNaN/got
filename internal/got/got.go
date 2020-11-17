@@ -37,10 +37,10 @@ type Got interface {
 
 	// Unstages a file by removing it from the index and is replaced by an
 	// earlier version of the file if one exists in the head tree.
-	Unstage(filename string) error
+	UnstagePath(paths ...string) error
 
 	// Discards the changes to a file in the working tree.
-	Discard(filename string) error
+	DiscardPath(paths ...string) error
 
 	// Returns a list of untracked, staged and unstaged files from the working directory.
 	// NOTE:
