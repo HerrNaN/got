@@ -9,8 +9,8 @@ import (
 )
 
 var Cmd = &cobra.Command{
-	Use:   "add <file>",
-	Short: "Add file into the index",
+	Use:   "add <file>...",
+	Short: "Add file(s) into the index",
 	Args:  cobra.ExactArgs(1),
 	Run:   runAdd,
 }
@@ -21,8 +21,7 @@ func runAdd(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		return
 	}
-	f := args[0]
-	err = g.Add(f)
+	err = g.AddPath(args...)
 	if err != nil {
 		fmt.Println(err)
 	}

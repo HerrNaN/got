@@ -138,16 +138,50 @@ func (g *Got) Head() (string, error) {
 	return string(bs), nil
 }
 
-func (g *Got) Add(filename string) error {
+func (g *Got) AddPath(paths ...string) error {
+	for _, p := range paths {
+		err := filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				return nil
+			}
+			return g.addFile(path)
+		})
+		if err != nil {
+			return errors.Wrapf(err, "couldn't add path %s", p)
+		}
+	}
+	return nil
+}
+
+func (g *Got) addFile(filename string) error {
 	rel, err := g.repoRel(filename)
 	if err != nil {
-		return errors.Wrap(err, "couldn't add file")
+		return errors.Wrapf(err, "couldn't add path %s", filename)
 	}
+
 	hash, err := g.HashFile(rel, true)
 	if err != nil {
-		return errors.Wrap(err, "couldn't add file")
+		return errors.Wrapf(err, "couldn't add path %s", filename)
 	}
-	return g.Index.AddFile(rel, hash)
+
+	err = g.Index.AddFile(rel, hash)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't add path %s", filename)
+	}
+	return nil
+}
+
+func (g *Got) UnstageMany(paths []string) error {
+	for _, p := range paths {
+		err := g.UnstagePath(p)
+		if err != nil {
+			return errors.Wrapf(err, "couldn't unstage path %s")
+		}
+	}
+	return nil
 }
 
 func (g *Got) Unstage(path string) error {

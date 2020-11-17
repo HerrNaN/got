@@ -31,9 +31,9 @@ type Got interface {
 	// Returns the checksum of the commit that the head is currently on.
 	Head() (string, error)
 
-	// Creates a blob object from the given file and then adds the file into
-	// the index.
-	Add(filename string) error
+	// Creates a blob object(s) from the given files (or files if the given
+	// path represents a directory) and then adds the file(s) into the index.
+	AddPath(paths ...string) error
 
 	// Unstages a file by removing it from the index and is replaced by an
 	// earlier version of the file if one exists in the head tree.
