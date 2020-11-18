@@ -94,6 +94,9 @@ func (t *Tree) getStatus(rel string, s *Status) *Status {
 
 		// If n is a file
 		if n.cs == nil {
+			if !n.tracked {
+				s.untracked = append(s.untracked, Change{path, nil})
+			}
 			if n.changes.Worktree != "" {
 				s.unstaged = append(s.unstaged, Change{path, &n.changes.Worktree})
 			}
