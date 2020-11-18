@@ -11,6 +11,7 @@ import (
 var Cmd = &cobra.Command{
 	Use:   "restore [--staged] <file>",
 	Short: "Restore specified file in the working tree from HEAD or Index",
+	Args:  cobra.MinimumNArgs(1),
 }
 
 func init() {

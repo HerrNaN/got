@@ -11,7 +11,7 @@ import (
 var Cmd = &cobra.Command{
 	Use:   "add <file>...",
 	Short: "Add file(s) into the index",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MinimumNArgs(1),
 	Run:   runAdd,
 }
 
