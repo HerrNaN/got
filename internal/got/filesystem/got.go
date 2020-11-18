@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -28,6 +29,7 @@ type Got struct {
 	dir     string
 	Objects objects.Objects
 	Index   index.Index
+	Ignores map[string]bool
 }
 
 func NewGot() (*Got, error) {
@@ -43,12 +45,17 @@ func NewGot() (*Got, error) {
 	if err != nil {
 		return nil, err
 	}
+	ignores, err := readIgnores(dir)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Got{
 		gotDir:  gotDir,
 		dir:     dir,
 		Objects: disk.NewObjects(gotDir),
 		Index:   i,
+		Ignores: ignores,
 	}, nil
 }
 
@@ -148,10 +155,7 @@ func (g *Got) AddPath(paths ...string) error {
 		matches = append(matches, ms...)
 	}
 	for _, m := range matches {
-		err := filepath.Walk(m, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
+		err := g.forAllInRepo(m, func(path string, info os.FileInfo, err error) error {
 			if info.IsDir() {
 				return nil
 			}
@@ -359,6 +363,52 @@ func (g *Got) headTree() (*objects.Tree, error) {
 
 }
 
+// The path parameter in f is relative to the repository root
+func (g *Got) forAllInRepo(dir string, f func(path string, info os.FileInfo, err error) error) error {
+	if g.isIgnored(dir) {
+		return nil
+	}
+	return filepath.Walk(dir, func(rel string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Convert path to repository relative path
+		rel, err = g.repoRel(rel)
+		if err != nil {
+			return err
+		}
+
+		// Ignore the .got directory
+		if rel == rootDir {
+			return filepath.SkipDir
+		}
+
+		// Ignore files and directories specified in ignore file
+		if g.isIgnored(rel) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		return f(rel, info, err)
+	})
+}
+
+func (g *Got) isIgnored(path string) bool {
+	if g.Ignores[path] {
+		return true
+	}
+	dirs := strings.Split(path, string(filepath.Separator))
+	for i := range dirs {
+		dir := filepath.Join(dirs[:i]...)
+		if g.Ignores[dir] || g.Ignores[dir+string(filepath.Separator)] {
+			return true
+		}
+	}
+	return false
+}
+
 // Returns the closest ascendant that contains a '.got' directory
 func getRepositoryRoot() (string, error) {
 	wd, err := os.Getwd()
@@ -419,4 +469,32 @@ func Initialize(dir string) error {
 		return err
 	}
 	return nil
+}
+
+func readIgnores(dir string) (map[string]bool, error) {
+	ignores := make(map[string]bool)
+	if !filesystem.FileExists(filepath.Join(dir, ".gitignore")) {
+		return ignores, nil
+	}
+	ignoreFile, err := ioutil.ReadFile(filepath.Join(dir, ".gitignore"))
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't read ignorefile")
+	}
+
+	for _, line := range strings.Split(string(ignoreFile), "\n") {
+		if len(line) == 0 {
+			continue
+		}
+		if line[0] == '#' {
+			continue
+		}
+		matches, err := filepath.Glob(line)
+		if err != nil {
+			return nil, errors.Wrapf(err, "couldn't read ignorefile")
+		}
+		for _, m := range matches {
+			ignores[m] = true
+		}
+	}
+	return ignores, nil
 }

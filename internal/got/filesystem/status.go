@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"got/internal/diff"
 	"got/internal/diff/simple"
@@ -89,17 +88,12 @@ func (g *Got) diffFiles() ([]*diff.FileDiff, []string, error) {
 	var untracked []string
 	var diffs []*diff.FileDiff
 	var files []*fileInfo
-	err := filepath.Walk(g.dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
+	err := g.forAllInRepo(g.dir, func(path string, info os.FileInfo, err error) error {
 		path, err = g.repoRel(path)
 		if err != nil {
 			return err
 		}
-		if path == ".git" || path == ".got" {
-			return filepath.SkipDir
-		}
+
 		if !info.IsDir() {
 			bs, err := ioutil.ReadFile(path)
 			if err != nil {
