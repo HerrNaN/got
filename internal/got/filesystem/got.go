@@ -139,8 +139,16 @@ func (g *Got) Head() (string, error) {
 }
 
 func (g *Got) AddPath(paths ...string) error {
+	var matches []string
 	for _, p := range paths {
-		err := filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
+		ms, err := filepath.Glob(p)
+		if err != nil {
+			return errors.Wrapf(err, "couldn't add path %s", p)
+		}
+		matches = append(matches, ms...)
+	}
+	for _, m := range matches {
+		err := filepath.Walk(m, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -150,7 +158,7 @@ func (g *Got) AddPath(paths ...string) error {
 			return g.addFile(path)
 		})
 		if err != nil {
-			return errors.Wrapf(err, "couldn't add path %s", p)
+			return errors.Wrapf(err, "couldn't add path %s", m)
 		}
 	}
 	return nil
@@ -175,6 +183,14 @@ func (g *Got) addFile(filename string) error {
 }
 
 func (g *Got) UnstagePath(paths ...string) error {
+	var matches []string
+	for _, p := range paths {
+		ms, err := filepath.Glob(p)
+		if err != nil {
+			return errors.Wrapf(err, "couldn't unstage path %s", p)
+		}
+		matches = append(matches, ms...)
+	}
 	for _, p := range paths {
 		err := filepath.Walk(p, func(localPath string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -214,6 +230,14 @@ func (g *Got) unstageFile(filename string) error {
 }
 
 func (g *Got) DiscardPath(paths ...string) error {
+	var matches []string
+	for _, p := range paths {
+		ms, err := filepath.Glob(p)
+		if err != nil {
+			return errors.Wrapf(err, "couldn't discard path %s", p)
+		}
+		matches = append(matches, ms...)
+	}
 	for _, p := range paths {
 		err := filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
