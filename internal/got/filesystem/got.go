@@ -195,18 +195,15 @@ func (g *Got) UnstagePath(paths ...string) error {
 		}
 		matches = append(matches, ms...)
 	}
-	for _, p := range paths {
-		err := filepath.Walk(p, func(localPath string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
+	for _, m := range matches {
+		err := g.forAllInRepo(m, func(localPath string, info os.FileInfo, err error) error {
 			if info.IsDir() {
 				return nil
 			}
 			return g.unstageFile(localPath)
 		})
 		if err != nil {
-			return errors.Wrapf(err, "couldn't unstage path %s", p)
+			return errors.Wrapf(err, "couldn't unstage path %s", m)
 		}
 	}
 	return nil
@@ -242,18 +239,15 @@ func (g *Got) DiscardPath(paths ...string) error {
 		}
 		matches = append(matches, ms...)
 	}
-	for _, p := range paths {
-		err := filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
+	for _, m := range matches {
+		err := g.forAllInRepo(m, func(path string, info os.FileInfo, err error) error {
 			if info.IsDir() {
 				return nil
 			}
 			return g.discardFile(path)
 		})
 		if err != nil {
-			return errors.Wrapf(err, "couldn't discard path %s", p)
+			return errors.Wrapf(err, "couldn't discard path %s", m)
 		}
 	}
 	return nil
