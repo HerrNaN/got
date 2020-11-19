@@ -3,17 +3,16 @@ package cmd
 import (
 	"fmt"
 
-	"got/internal/cmd/restore"
-
-	"got/internal/cmd/commit"
-
 	"github.com/spf13/cobra"
 
 	"got/internal/cmd/add"
 	"got/internal/cmd/catfile"
+	"got/internal/cmd/commit"
+	"got/internal/cmd/diff"
 	"got/internal/cmd/hashobject"
 	gotInit "got/internal/cmd/init"
 	"got/internal/cmd/readtree"
+	"got/internal/cmd/restore"
 	"got/internal/cmd/status"
 	"got/internal/cmd/updateindex"
 	"got/internal/cmd/writetree"
@@ -37,4 +36,5 @@ func init() {
 	GotCmd.AddCommand(status.Cmd)
 	GotCmd.AddCommand(commit.Cmd)
 	GotCmd.AddCommand(restore.Cmd)
+	GotCmd.AddCommand(diff.Cmd)
 }

@@ -1,11 +1,18 @@
 package filesystem
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/gookit/color"
+
+	"got/internal/diff/simple"
+
+	"got/internal/diff"
 
 	"github.com/pkg/errors"
 
@@ -30,6 +37,7 @@ type Got struct {
 	Objects objects.Objects
 	Index   index.Index
 	Ignores map[string]bool
+	Differ  diff.Differ
 }
 
 func NewGot() (*Got, error) {
@@ -56,6 +64,7 @@ func NewGot() (*Got, error) {
 		Objects: disk.NewObjects(gotDir),
 		Index:   i,
 		Ignores: ignores,
+		Differ:  simple.Diff{},
 	}, nil
 }
 
@@ -278,6 +287,66 @@ func (g *Got) discardFile(filename string) error {
 		return fmt.Errorf("%s did not match any file(s) know to got", filename)
 	}
 	return nil
+}
+
+func (g *Got) DiffPath(paths ...string) (string, error) {
+	buf := bytes.NewBuffer(nil)
+	var matches []string
+	for _, p := range paths {
+		ms, err := filepath.Glob(p)
+		if err != nil {
+			return "", errors.Wrapf(err, "couldn't diff path %s", p)
+		}
+		matches = append(matches, ms...)
+	}
+	for _, m := range matches {
+		err := g.forAllInRepo(m, func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+			hs, err := g.diffPath(path)
+			if err != nil {
+				return err
+			}
+			if hs != nil {
+				fmt.Fprintf(buf, color.OpBold.Sprintf("--- a/%s\n", path))
+				fmt.Fprintf(buf, color.OpBold.Sprintf("+++ b/%s\n", path))
+				fmt.Fprint(buf, hs)
+			}
+			return nil
+		})
+		if err != nil {
+			return "", errors.Wrapf(err, "couldn't diff path %s", m)
+		}
+	}
+	return buf.String(), nil
+}
+
+func (g *Got) diffPath(path string) (diff.Hunks, error) {
+	abs := filepath.Join(g.dir, path)
+	var wt []byte = nil
+	if filesystem.FileExists(abs) {
+		bs, err := ioutil.ReadFile(abs)
+		if err != nil {
+			return nil, errors.Wrapf(err, "couldn't diff path %s", abs)
+		}
+		wt = bs
+	}
+
+	var idx []byte = nil
+	if g.Index.HasEntryFor(path) {
+		hash, err := g.Index.GetEntrySum(path)
+		if err != nil {
+			return nil, errors.Wrapf(err, "couldn't diff path %s", abs)
+		}
+		blob, err := g.Objects.GetBlob(hash)
+		if err != nil {
+			return nil, errors.Wrapf(err, "couldn't diff path %s", abs)
+		}
+		idx = []byte(blob.Contents)
+	}
+
+	return g.Differ.DiffBytes(idx, wt).Strip(), nil
 }
 
 func (g *Got) repoRel(path string) (string, error) {

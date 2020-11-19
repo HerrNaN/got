@@ -1,6 +1,7 @@
 package got
 
 import (
+	"got/internal/diff"
 	"got/internal/status"
 )
 
@@ -41,6 +42,9 @@ type Got interface {
 
 	// Discards the changes to a file in the working tree.
 	DiscardPath(paths ...string) error
+
+	// Return the
+	DiffPath(paths ...string) ([]diff.BytesDiff, error)
 
 	// Returns a list of untracked, staged and unstaged files from the working directory.
 	// NOTE:
