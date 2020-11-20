@@ -3,6 +3,8 @@ package readtree
 import (
 	"fmt"
 
+	"got/internal/objects"
+
 	"github.com/spf13/cobra"
 
 	"got/internal/got/filesystem"
@@ -18,8 +20,12 @@ var Cmd = &cobra.Command{
 			fmt.Println(err)
 			return
 		}
-		sum := args[0]
-		err = g.ReadTree(sum)
+		id, err := objects.IdFromString(args[0])
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		err = g.ReadTree(id)
 		if err != nil {
 			fmt.Println(err)
 		}

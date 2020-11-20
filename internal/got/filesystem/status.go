@@ -2,7 +2,6 @@ package filesystem
 
 import (
 	"crypto/sha1"
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -15,7 +14,7 @@ import (
 
 type fileInfo struct {
 	name string
-	hash string
+	hash objects.ID
 	perm os.FileMode
 }
 
@@ -67,18 +66,24 @@ func (g *Got) diffHead() ([]*diff.FileDiff, error) {
 		return nil, err
 	}
 	for _, ie := range g.Index.SortedEntries() {
-		d, err := g.diffEntryAgainstHead(ie, headTree)
-		if err != nil {
-			return nil, err
+		var d *diff.FileDiff
+		if headTree != nil {
+			d, err = g.diffEntryAgainstHead(ie, headTree)
+			if err != nil {
+				return nil, err
+			}
 		}
 		if d == nil {
-			d = diff.NewCreateFileDiff(ie.Perm, ie.Sum, ie.Name)
+			d = diff.NewCreateFileDiff(ie.Perm, ie.ID, ie.Name)
 		}
 		diffs = append(diffs, d)
 	}
+	if headTree == nil {
+		return diffs, nil
+	}
 	for _, te := range headTree.Entries {
 		if !g.Index.HasEntryFor(te.Name) {
-			diffs = append(diffs, diff.NewDeleteFileDiff(te.Mode, te.Checksum, te.Name))
+			diffs = append(diffs, diff.NewDeleteFileDiff(te.Mode, te.ID, te.Name))
 		}
 	}
 	return diffs, nil
@@ -99,7 +104,7 @@ func (g *Got) diffFiles() ([]*diff.FileDiff, []string, error) {
 			if err != nil {
 				return err
 			}
-			hash := fmt.Sprintf("%x", sha1.Sum(bs))
+			hash := objects.IdFromSum(sha1.Sum(bs))
 			files = append(files, &fileInfo{
 				name: path,
 				hash: hash,
@@ -118,7 +123,7 @@ func (g *Got) diffFiles() ([]*diff.FileDiff, []string, error) {
 			return nil, nil, err
 		}
 		if d == nil {
-			d = diff.NewCreateFileDiff(ie.Perm, ie.Sum, ie.Name)
+			d = diff.NewCreateFileDiff(ie.Perm, ie.ID, ie.Name)
 		}
 		diffs = append(diffs, d)
 	}
@@ -136,14 +141,14 @@ func (g *Got) diffEntryAgainstHead(ie index.Entry, headTree *objects.Tree) (*dif
 		if ie.Name != te.Name {
 			continue
 		}
-		if ie.Sum == te.Checksum {
-			return diff.NewUnmodifiedFileDiff(ie.Perm, ie.Sum, ie.Name), nil
+		if ie.ID == te.ID {
+			return diff.NewUnmodifiedFileDiff(ie.Perm, ie.ID, ie.Name), nil
 		}
-		iBlob, err := g.Objects.GetBlob(ie.Sum)
+		iBlob, err := g.Objects.GetBlob(ie.ID)
 		if err != nil {
 			return nil, err
 		}
-		tBlob, err := g.Objects.GetBlob(te.Checksum)
+		tBlob, err := g.Objects.GetBlob(te.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -151,7 +156,7 @@ func (g *Got) diffEntryAgainstHead(ie index.Entry, headTree *objects.Tree) (*dif
 		if err != nil {
 			return nil, err
 		}
-		return diff.NewInPlaceFileDiff(te.Mode, ie.Perm, te.Checksum, ie.Sum, ie.Name), nil
+		return diff.NewInPlaceFileDiff(te.Mode, ie.Perm, te.ID, ie.ID, ie.Name), nil
 	}
 	return nil, nil
 }
@@ -162,10 +167,10 @@ func (g *Got) diffEntryAgainstFiles(ie index.Entry, files []*fileInfo) (*diff.Fi
 		if ie.Name != f.name {
 			continue
 		}
-		if ie.Sum == f.hash {
+		if ie.ID == f.hash {
 			return diff.NewUnmodifiedFileDiff(f.perm, f.hash, f.name), nil
 		}
-		iBlob, err := g.Objects.GetBlob(ie.Sum)
+		iBlob, err := g.Objects.GetBlob(ie.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -177,7 +182,7 @@ func (g *Got) diffEntryAgainstFiles(ie index.Entry, files []*fileInfo) (*diff.Fi
 		if err != nil {
 			return nil, err
 		}
-		return diff.NewInPlaceFileDiff(f.perm, ie.Perm, f.hash, ie.Sum, f.name), nil
+		return diff.NewInPlaceFileDiff(f.perm, ie.Perm, f.hash, ie.ID, f.name), nil
 	}
 	return nil, nil
 }

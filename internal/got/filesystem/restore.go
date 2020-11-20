@@ -40,7 +40,7 @@ func (g *Got) unstageFile(filename string) error {
 	}
 	for _, te := range headTree.Entries {
 		if te.Name == rel {
-			return g.Index.AddFile(te.Name, te.Checksum)
+			return g.Index.AddFile(te.Name, te.ID)
 		}
 	}
 	err = g.Index.RemoveFile(rel)
@@ -81,7 +81,7 @@ func (g *Got) discardFile(filename string) error {
 	}
 	for _, te := range headTree.Entries {
 		if te.Name == rel {
-			blob, err := g.Objects.GetBlob(te.Checksum)
+			blob, err := g.Objects.GetBlob(te.ID)
 			if err != nil {
 				return errors.Wrapf(err, "couldn't discard changes in %s", rel)
 			}

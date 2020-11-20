@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"got/internal/objects"
+
 	"github.com/gookit/color"
 )
 
@@ -18,55 +20,55 @@ type FileDiff struct {
 	EditType FileEditType
 	SrcPerm  os.FileMode
 	DstPerm  os.FileMode
-	SrcHash  string
-	DstHash  string
+	SrcID    objects.ID
+	DstID    objects.ID
 	SrcPath  string
 	DstPath  string
 }
 
-func NewInPlaceFileDiff(oldPerm, newPerm os.FileMode, oldHash, newHash string, path string) *FileDiff {
+func NewInPlaceFileDiff(oldPerm, newPerm os.FileMode, oldHash, newHash objects.ID, path string) *FileDiff {
 	return &FileDiff{
 		EditType: FileEditTypeInPlace,
 		SrcPerm:  oldPerm,
 		DstPerm:  newPerm,
-		SrcHash:  oldHash,
-		DstHash:  newHash,
+		SrcID:    oldHash,
+		DstID:    newHash,
 		SrcPath:  path,
 		DstPath:  "",
 	}
 }
 
-func NewCreateFileDiff(perm os.FileMode, hash string, path string) *FileDiff {
+func NewCreateFileDiff(perm os.FileMode, id objects.ID, path string) *FileDiff {
 	return &FileDiff{
 		EditType: FileEditTypeCreate,
 		SrcPerm:  0,
 		DstPerm:  perm,
-		SrcHash:  "",
-		DstHash:  hash,
+		SrcID:    "",
+		DstID:    id,
 		SrcPath:  "",
 		DstPath:  path,
 	}
 }
 
-func NewDeleteFileDiff(perm os.FileMode, hash string, path string) *FileDiff {
+func NewDeleteFileDiff(perm os.FileMode, id objects.ID, path string) *FileDiff {
 	return &FileDiff{
 		EditType: FileEditTypeDelete,
 		SrcPerm:  perm,
 		DstPerm:  0,
-		SrcHash:  hash,
-		DstHash:  "",
+		SrcID:    id,
+		DstID:    "",
 		SrcPath:  path,
 		DstPath:  "",
 	}
 }
 
-func NewUnmodifiedFileDiff(perm os.FileMode, hash string, path string) *FileDiff {
+func NewUnmodifiedFileDiff(perm os.FileMode, id objects.ID, path string) *FileDiff {
 	return &FileDiff{
 		EditType: FileEditTypeUnmodified,
 		SrcPerm:  perm,
 		DstPerm:  perm,
-		SrcHash:  hash,
-		DstHash:  hash,
+		SrcID:    id,
+		DstID:    id,
 		SrcPath:  path,
 		DstPath:  path,
 	}

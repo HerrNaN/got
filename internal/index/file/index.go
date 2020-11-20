@@ -61,12 +61,12 @@ func (i *Index) SortedEntries() []index.Entry {
 	return entries
 }
 
-func (i *Index) AddFile(filename string, sum string) error {
+func (i *Index) AddFile(filename string, id objects.ID) error {
 	stat, err := os.Stat(filename)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't add file %s to index", filename)
 	}
-	i.Entries[filename] = index.NewEntry(stat.Mode(), objects.TypeBlob, sum, filename)
+	i.Entries[filename] = index.NewEntry(stat.Mode(), objects.TypeBlob, id, filename)
 	return i.writeToFile()
 }
 
@@ -77,13 +77,13 @@ func (i *Index) RemoveFile(filename string) error {
 
 func (i *Index) AddTreeContents(tree objects.Tree) error {
 	for _, e := range tree.Entries {
-		i.Entries[e.Name] = index.NewEntry(e.Mode, e.Type, e.Checksum, e.Name)
+		i.Entries[e.Name] = index.NewEntry(e.Mode, e.Type, e.ID, e.Name)
 	}
 	return i.writeToFile()
 }
 
-func (i *Index) AddTree(sum string, prefix string) error {
-	i.Entries[prefix] = index.NewEntry(os.ModePerm, objects.TypeTree, sum, prefix)
+func (i *Index) AddTree(id objects.ID, prefix string) error {
+	i.Entries[prefix] = index.NewEntry(os.ModePerm, objects.TypeTree, id, prefix)
 	return i.writeToFile()
 }
 
@@ -95,13 +95,13 @@ func (i *Index) GetEntryFor(name string) (index.Entry, error) {
 	return e, nil
 }
 
-func (i *Index) GetEntry(sum string, name string) (index.Entry, error) {
+func (i *Index) GetEntry(id objects.ID, name string) (index.Entry, error) {
 	e, err := i.GetEntryFor(name)
 	if err != nil {
 		return index.Entry{}, errors.Wrapf(err, "couldn't get entry %s", name)
 	}
-	if e.Sum != sum {
-		return index.Entry{}, fmt.Errorf("found entry does not match sum %s", sum)
+	if e.ID != id {
+		return index.Entry{}, fmt.Errorf("found entry does not match sum %s", id)
 	}
 	return e, nil
 }
@@ -111,12 +111,12 @@ func (i *Index) HasEntryFor(name string) bool {
 	return ok
 }
 
-func (i *Index) GetEntrySum(filename string) (string, error) {
+func (i *Index) GetEntrySum(filename string) (objects.ID, error) {
 	e, ok := i.Entries[filename]
 	if !ok {
 		return "", errors.New("entry not found")
 	}
-	return e.Sum, nil
+	return e.ID, nil
 }
 
 func (i *Index) HasDescendantsInIndex(dir string) bool {

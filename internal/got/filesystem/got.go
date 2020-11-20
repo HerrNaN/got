@@ -65,13 +65,13 @@ func NewGot() (*Got, error) {
 	}, nil
 }
 
-func (g *Got) HashFile(filename string, store bool) (string, error) {
+func (g *Got) HashFile(filename string, store bool) (objects.ID, error) {
 	bs, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return "", errors.Wrapf(err, "couldn't hash file %s", filename)
 	}
 	blob := objects.NewBlob(bs)
-	sum := blob.Hash()
+	sum := blob.ID()
 	if store {
 		err = g.Objects.StoreBlob(sum, bs)
 		if err != nil {
@@ -81,12 +81,19 @@ func (g *Got) HashFile(filename string, store bool) (string, error) {
 	return sum, nil
 }
 
-func (g *Got) Head() (string, error) {
+func (g *Got) Head() (*objects.ID, error) {
 	bs, err := ioutil.ReadFile(filepath.Join(g.dir, headFile))
 	if err != nil {
-		return "", errors.Wrap(err, "couldn't read HEAD file")
+		return nil, errors.Wrap(err, "couldn't read HEAD file")
 	}
-	return string(bs), nil
+	if len(bs) == 0 {
+		return nil, nil
+	}
+	id, err := objects.IdFromString(string(bs))
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't read HEAD file")
+	}
+	return &id, nil
 }
 
 func (g *Got) repoRel(path string) (string, error) {
@@ -101,8 +108,8 @@ func (g *Got) repoRel(path string) (string, error) {
 	return repoRel, nil
 }
 
-func (g *Got) moveHead(hash string) error {
-	return ioutil.WriteFile(filepath.Join(g.dir, headFile), []byte(hash), os.ModePerm)
+func (g *Got) moveHead(id objects.ID) error {
+	return ioutil.WriteFile(filepath.Join(g.dir, headFile), []byte(id), os.ModePerm)
 }
 
 func (g *Got) headTree() (*objects.Tree, error) {
@@ -110,14 +117,14 @@ func (g *Got) headTree() (*objects.Tree, error) {
 	if err != nil {
 		return nil, err
 	}
-	if head == "" {
+	if head == nil {
 		return nil, nil
 	}
-	c, err := g.Objects.GetCommit(head)
+	c, err := g.Objects.GetCommit(*head)
 	if err != nil {
 		return nil, err
 	}
-	tree, err := g.Objects.GetTree(c.TreeHash)
+	tree, err := g.Objects.GetTree(c.TreeID)
 	return &tree, err
 
 }

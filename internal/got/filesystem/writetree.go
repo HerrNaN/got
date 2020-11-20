@@ -6,23 +6,23 @@ import (
 	"got/internal/objects"
 )
 
-func (g *Got) WriteTree() (string, error) {
+func (g *Got) WriteTree() (objects.ID, error) {
 	var entries []objects.TreeEntry
 	for _, e := range g.Index.SortedEntries() {
 		entries = append(entries, objects.TreeEntry{
-			Mode:     e.Perm,
-			Type:     e.EntryType,
-			Name:     e.Name,
-			Checksum: e.Sum,
+			Mode: e.Perm,
+			Type: e.EntryType,
+			Name: e.Name,
+			ID:   e.ID,
 		})
 	}
 	tree := objects.Tree{
 		Entries: entries,
 	}
-	sum := tree.Hash()
-	err := g.Objects.StoreTree(sum, tree.Entries)
+	id := tree.ID()
+	err := g.Objects.StoreTree(id, tree.Entries)
 	if err != nil {
 		return "", errors.Wrapf(err, "couldn't write tree")
 	}
-	return sum, nil
+	return id, nil
 }

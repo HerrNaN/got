@@ -1,11 +1,15 @@
 package filesystem
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
 
-func (g *Got) ReadTree(sum string) error {
-	tree, err := g.Objects.GetTree(sum)
+	"got/internal/objects"
+)
+
+func (g *Got) ReadTree(id objects.ID) error {
+	tree, err := g.Objects.GetTree(id)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't read tree %s", sum)
+		return errors.Wrapf(err, "couldn't read tree %s", id)
 	}
 	g.Index.AddTreeContents(tree)
 	return nil

@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"got/internal/diff"
+	"got/internal/objects"
 	"got/internal/pkg/filesystem"
 )
 
@@ -47,7 +48,7 @@ func (g *Got) diffIndexPath(path string) (diff.Hunks, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't diff index with HEAD %s", path)
 	}
-	hd, err := g.getContentsOfPathFromCommit(path, headHash)
+	hd, err := g.getContentsOfPathFromCommit(path, *headHash)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't diff index with HEAD %s", path)
 	}
@@ -103,15 +104,15 @@ func (g *Got) diffPath(path string) (diff.Hunks, error) {
 	return g.Differ.DiffBytes(idx, wt).Strip(), nil
 }
 
-func (g *Got) getContentsOfPathFromCommit(path string, commitHash string) ([]byte, error) {
-	tree, err := g.Objects.GetCommitTree(commitHash)
+func (g *Got) getContentsOfPathFromCommit(path string, commitID objects.ID) ([]byte, error) {
+	tree, err := g.Objects.GetCommitTree(commitID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't get contents for path %s in commit %s", path, commitHash)
+		return nil, errors.Wrapf(err, "couldn't get contents for path %s in commit %s", path, commitID)
 	}
 
 	for _, te := range tree.Entries {
 		if te.Name == path {
-			return g.Objects.GetBlobContent(te.Checksum)
+			return g.Objects.GetBlobContent(te.ID)
 		}
 	}
 	return nil, nil

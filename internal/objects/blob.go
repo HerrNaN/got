@@ -2,7 +2,6 @@ package objects
 
 import (
 	"crypto/sha1"
-	"fmt"
 )
 
 type Blob struct {
@@ -23,6 +22,6 @@ func (b Blob) Content() string {
 	return b.Contents
 }
 
-func (b Blob) Hash() string {
-	return fmt.Sprintf("%x", sha1.Sum([]byte(b.Content())))
+func (b Blob) ID() ID {
+	return IdFromSum(sha1.Sum([]byte(b.Content())))
 }

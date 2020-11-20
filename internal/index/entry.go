@@ -11,22 +11,22 @@ import (
 type Entry struct {
 	Perm      os.FileMode
 	EntryType objects.Type
-	Sum       string
+	ID        objects.ID
 	Name      string
 }
 
 func (e Entry) String() string {
-	return fmt.Sprintf("%-10v %s %-46v %s", e.Perm, e.EntryType, e.Sum, e.Name)
+	return fmt.Sprintf("%-10v %s %-46v %s", e.Perm, e.EntryType, e.ID, e.Name)
 }
 
 type Entries []Entry
 type EntryMap map[string]Entry
 
-func NewEntry(perm os.FileMode, entryType objects.Type, sum string, name string) Entry {
+func NewEntry(perm os.FileMode, entryType objects.Type, sum objects.ID, name string) Entry {
 	return Entry{
 		Perm:      perm,
 		EntryType: entryType,
-		Sum:       sum,
+		ID:        sum,
 		Name:      name,
 	}
 }

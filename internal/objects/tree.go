@@ -3,7 +3,6 @@ package objects
 import (
 	"crypto/sha1"
 	"encoding/json"
-	"fmt"
 	"os"
 )
 
@@ -12,10 +11,10 @@ type Tree struct {
 }
 
 type TreeEntry struct {
-	Mode     os.FileMode
-	Type     Type
-	Name     string
-	Checksum string
+	Mode os.FileMode
+	Type Type
+	Name string
+	ID   ID
 }
 
 func (t Tree) Type() Type {
@@ -27,6 +26,6 @@ func (t Tree) Content() string {
 	return string(bs)
 }
 
-func (t Tree) Hash() string {
-	return fmt.Sprintf("%x", sha1.Sum([]byte(t.Content())))
+func (t Tree) ID() ID {
+	return IdFromSum(sha1.Sum([]byte(t.Content())))
 }

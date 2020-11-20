@@ -44,8 +44,12 @@ func run(cmd *cobra.Command, args []string, showType bool, prettyPrint bool) {
 		fmt.Println(err)
 		return
 	}
-	sum := args[0]
-	t, err := g.Objects.TypeOf(sum)
+	id, err := objects.IdFromString(args[0])
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	t, err := g.Objects.TypeOf(id)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -53,9 +57,9 @@ func run(cmd *cobra.Command, args []string, showType bool, prettyPrint bool) {
 	var o objects.Object
 	switch t {
 	case objects.TypeBlob:
-		o, _ = g.Objects.GetBlob(sum)
+		o, _ = g.Objects.GetBlob(id)
 	case objects.TypeTree:
-		o, _ = g.Objects.GetTree(sum)
+		o, _ = g.Objects.GetTree(id)
 	default:
 		fmt.Println("no object found")
 		return

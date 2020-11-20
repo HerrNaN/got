@@ -9,7 +9,7 @@ type Index interface {
 
 	// Add the current contents of a file into the index. The file
 	// path should be relative to the repository root.
-	AddFile(filename string, sum string) error
+	AddFile(filename string, id objects.ID) error
 
 	// Removes a file from the index
 	RemoveFile(filename string) error
@@ -19,13 +19,13 @@ type Index interface {
 	AddTreeContents(tree objects.Tree) error
 
 	// Add a tree object into the index
-	AddTree(sum string, prefix string) error
+	AddTree(id objects.ID, prefix string) error
 
 	// Returns true if the index contains an entry for a given file.
 	HasEntryFor(filename string) bool
 
 	// Gets the checksum of the entry of the given file.
-	GetEntrySum(filename string) (string, error)
+	GetEntrySum(filename string) (objects.ID, error)
 
 	// Checks if a directory has any descendants that are part of the current
 	// index. That is any staged descendants.

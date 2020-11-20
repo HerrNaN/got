@@ -32,6 +32,11 @@ func runStatus(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fmt.Printf("HEAD at %s\n", head)
+	if head == nil {
+		fmt.Println("No commits yet")
+	} else {
+		fmt.Printf("HEAD at %s\n", *head)
+	}
+
 	fmt.Println(s)
 }

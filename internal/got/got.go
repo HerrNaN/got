@@ -1,6 +1,7 @@
 package got
 
 import (
+	"got/internal/objects"
 	"got/internal/status"
 )
 
@@ -9,7 +10,7 @@ type Got interface {
 	// Calculates the checksum for the contents of a given file and optionally
 	// stores the contents of the given file in a new file at
 	// '.got/objects/hash[:2]/hash[2:]
-	HashFile(filename string, store bool) (string, error)
+	HashFile(filename string, store bool) (objects.ID, error)
 
 	// Adds a given file to the index. NOTE: Does NOT create a blob object of
 	// the file.
@@ -17,19 +18,19 @@ type Got interface {
 
 	// Writes the contents of the index into a tree object and stores that
 	// object.
-	WriteTree() (string, error)
+	WriteTree() (objects.ID, error)
 
 	// Reads a tree with a given checksum from the objects directory into the
 	// index.
-	ReadTree(sum string) error
+	ReadTree(id objects.ID) error
 
 	// Creates a commit object from the given tree checksum, message and parent
 	// commit checksum. NOTE: For the first commit the parent commit should be
 	// empty.
-	CommitTree(msg string, tree string, parent string) (string, error)
+	CommitTree(msg string, treeID objects.ID, parentID *objects.ID) (objects.ID, error)
 
 	// Returns the checksum of the commit that the head is currently on.
-	Head() (string, error)
+	Head() (*objects.ID, error)
 
 	// Creates a blob object(s) from the given files (or files if the given
 	// path represents a directory) and then adds the file(s) into the index.

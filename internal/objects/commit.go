@@ -6,18 +6,24 @@ import (
 )
 
 type Commit struct {
-	TreeHash string
-	Parent   string
+	TreeID   ID
+	ParentID *ID
 	Author   string
 	Message  string
-	Checksum string
+	Checksum ID
 }
 
-func NewCommit(treeHash string, parent string, author string, message string) Commit {
-	checksum := fmt.Sprintf("%x", sha1.Sum([]byte(treeHash+parent+author+message)))
+func NewCommit(treeID ID, parentID *ID, author string, message string) Commit {
+	var checksum ID
+	if parentID == nil {
+		checksum = IdFromSum(sha1.Sum([]byte(string(treeID) + author + message)))
+	} else {
+		checksum = IdFromSum(sha1.Sum([]byte(string(treeID) + string(*parentID) + author + message)))
+	}
+
 	return Commit{
-		TreeHash: treeHash,
-		Parent:   parent,
+		TreeID:   treeID,
+		ParentID: parentID,
 		Author:   author,
 		Message:  message,
 		Checksum: checksum,
@@ -30,14 +36,14 @@ func (c Commit) Type() Type {
 
 func (c Commit) Content() string {
 	var content string
-	content += fmt.Sprintf("tree %s\n", c.TreeHash)
-	content += fmt.Sprintf("parent %s\n", c.Parent)
+	content += fmt.Sprintf("tree %s\n", c.TreeID)
+	content += fmt.Sprintf("parent %s\n", c.ParentID)
 	content += fmt.Sprintf("author %s\n", c.Author)
 	content += fmt.Sprintf("message %s\n", c.Message)
 	content += fmt.Sprintf("checksum %s\n", c.Checksum)
 	return content
 }
 
-func (c Commit) Hash() string {
-	return fmt.Sprintf("%x", sha1.Sum([]byte(c.Content())))
+func (c Commit) ID() ID {
+	return IdFromSum(sha1.Sum([]byte(c.Content())))
 }
