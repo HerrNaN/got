@@ -34,7 +34,7 @@ func (le LogEntry) String() string {
 	return buf.String()
 }
 
-func (g *Got) Log() (Log, error) {
+func (g *Got) Log(n int) (Log, error) {
 	commitID, err := g.Head()
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't show log")
@@ -49,12 +49,17 @@ func (g *Got) Log() (Log, error) {
 
 	var log Log
 	log = append(log, LogEntry(commit))
+	n--
 	for commit.ParentID != nil {
+		if n == 0 {
+			break
+		}
 		commit, err = g.Objects.GetCommit(*commit.ParentID)
 		if err != nil {
 			return nil, errors.Wrap(err, "couldn't show log")
 		}
 		log = append(log, LogEntry(commit))
+		n--
 	}
 	return log, nil
 }

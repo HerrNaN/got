@@ -18,18 +18,19 @@ var Cmd = &cobra.Command{
 }
 
 func init() {
+	n := Cmd.Flags().IntP("number", "n", 0, "show a maximum of n entries")
 	Cmd.Run = func(cmd *cobra.Command, args []string) {
-		runLog(cmd, args)
+		runLog(cmd, args, *n)
 	}
 }
 
-func runLog(cmd *cobra.Command, args []string) {
+func runLog(cmd *cobra.Command, args []string, n int) {
 	g, err := filesystem.NewGot()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	log, err := g.Log()
+	log, err := g.Log(n)
 	if err != nil {
 		fmt.Println(err)
 		return
