@@ -56,14 +56,6 @@ func (o *Objects) GetBlob(id objects.ID) (objects.Blob, error) {
 	return obj, nil
 }
 
-func (o *Objects) GetBlobContent(id objects.ID) ([]byte, error) {
-	blob, err := o.GetBlob(id)
-	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't get blob contents %s", id)
-	}
-	return []byte(blob.Contents), nil
-}
-
 func (o *Objects) GetTree(id objects.ID) (objects.Tree, error) {
 	file := filepath.Join(o.dir, ObjectsDir, string(id)[:2], string(id)[2:])
 	var tree objects.Tree
@@ -90,14 +82,6 @@ func (o *Objects) GetCommit(id objects.ID) (objects.Commit, error) {
 		return objects.Commit{}, errors.Wrapf(err, "couldn't get commit %s", id)
 	}
 	return commit, nil
-}
-
-func (o *Objects) GetCommitTree(id objects.ID) (objects.Tree, error) {
-	c, err := o.GetCommit(id)
-	if err != nil {
-		return objects.Tree{}, errors.Wrapf(err, "couldn't get tree from commit %s", id)
-	}
-	return o.GetTree(c.TreeID)
 }
 
 func (o *Objects) TypeOf(id objects.ID) (objects.Type, error) {

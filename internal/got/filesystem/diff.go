@@ -105,14 +105,22 @@ func (g *Got) diffPath(path string) (diff.Hunks, error) {
 }
 
 func (g *Got) getContentsOfPathFromCommit(path string, commitID objects.ID) ([]byte, error) {
-	tree, err := g.Objects.GetCommitTree(commitID)
+	commit, err := g.Objects.GetCommit(commitID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't get contents for path %s in commit %s", path, commitID)
+	}
+	tree, err := g.Objects.GetTree(commit.TreeID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't get contents for path %s in commit %s", path, commitID)
 	}
 
 	for _, te := range tree.Entries {
 		if te.Name == path {
-			return g.Objects.GetBlobContent(te.ID)
+			blob, err := g.Objects.GetBlob(te.ID)
+			if err != nil {
+				return nil, errors.Wrapf(err, "couldn't get contents for path %s in commit %s", path, commitID)
+			}
+			return []byte(blob.Content()), nil
 		}
 	}
 	return nil, nil

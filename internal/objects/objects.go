@@ -8,17 +8,11 @@ type Objects interface {
 	// Retrieves a Blob from a given ID
 	GetBlob(id ID) (Blob, error)
 
-	// Retrieves the content of a blob of a given ID
-	GetBlobContent(id ID) ([]byte, error)
-
 	// Retrieves a Tree from a given ID
 	GetTree(id ID) (Tree, error)
 
 	// Retrieves a Commit from a given ID
 	GetCommit(id ID) (Commit, error)
-
-	// Retrieves the Tree associated with a commit with a given ID
-	GetCommitTree(id ID) (Tree, error)
 
 	// Stores the given Object
 	Store(object Object) error
