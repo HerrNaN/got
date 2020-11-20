@@ -111,6 +111,9 @@ func (bd BytesDiff) Strip() Hunks {
 			}
 		}
 	}
+	if hunk != nil {
+		hunks = append(hunks, *hunk)
+	}
 	return hunks
 }
 
@@ -138,7 +141,7 @@ func (bd BytesDiff) hasDiffWithInRangeAt(at int, within int) bool {
 func (h Hunk) String() string {
 	buf := bytes.NewBuffer(nil)
 	fmt.Fprintf(buf, color.Cyan.Sprintf("@@ -%d,%d +%d,%d @@\n", h.SrcStart, h.SrcEnd, h.DstStart, h.DstEnd))
-	fmt.Fprintln(buf, h.Edits)
+	fmt.Fprint(buf, h.Edits)
 	return buf.String()
 }
 

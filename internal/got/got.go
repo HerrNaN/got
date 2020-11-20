@@ -1,7 +1,6 @@
 package got
 
 import (
-	"got/internal/diff"
 	"got/internal/status"
 )
 
@@ -14,7 +13,7 @@ type Got interface {
 
 	// Adds a given file to the index. NOTE: Does NOT create a blob object of
 	// the file.
-	AddToIndex(filename string) error
+	UpdateIndex(filename string) error
 
 	// Writes the contents of the index into a tree object and stores that
 	// object.
@@ -43,8 +42,15 @@ type Got interface {
 	// Discards the changes to a file in the working tree.
 	DiscardPath(paths ...string) error
 
-	// Return the
-	DiffPath(paths ...string) ([]diff.BytesDiff, error)
+	// Return the diff between index and HEAD for every path specified
+	DiffIndexPath(paths ...string) (string, error)
+
+	// Return the diff between working tree and index for every path described by
+	// the given path specifiers
+	DiffPathSpec(pathspecs ...string) (string, error)
+
+	// Return the diff between working tree and index for every path specified
+	DiffPath(paths ...string) (string, error)
 
 	// Returns a list of untracked, staged and unstaged files from the working directory.
 	// NOTE:

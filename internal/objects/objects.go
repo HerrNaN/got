@@ -8,6 +8,9 @@ type Objects interface {
 	// Retrieves a Blob from a given ID
 	GetBlob(sum string) (Blob, error)
 
+	// Retrieves the content of a blob of a given ID
+	GetBlobContent(sum string) ([]byte, error)
+
 	// Stores content as Blob with a given ID
 	StoreBlob(sum string, bs []byte) error
 
@@ -19,6 +22,9 @@ type Objects interface {
 
 	// Retrieves a Commit from a given ID
 	GetCommit(sum string) (Commit, error)
+
+	// Retrieves the Tree associated with a commit with a given ID
+	GetCommitTree(sum string) (Tree, error)
 
 	// Stores a commit object
 	StoreCommit(commit Commit) (string, error)

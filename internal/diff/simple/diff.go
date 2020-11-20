@@ -13,6 +13,9 @@ import (
 type Diff struct{}
 
 func (d Diff) DiffBytes(a []byte, b []byte) diff.BytesDiff {
+	if a == nil && b == nil {
+		return nil
+	}
 	return diffBytes(a, b)
 }
 
@@ -56,8 +59,19 @@ type path struct {
 }
 
 func diffBytes(as, bs []byte) diff.BytesDiff {
-	a := strings.Split(string(as), "\n")
-	b := strings.Split(string(bs), "\n")
+	var a, b []string
+	if len(as) > 0 {
+		a = strings.Split(string(as), "\n")
+		if a[len(a)-1] == "" {
+			a = a[:len(a)-1]
+		}
+	}
+	if len(bs) > 0 {
+		b = strings.Split(string(bs), "\n")
+		if b[len(b)-1] == "" {
+			b = b[:len(b)-1]
+		}
+	}
 	n := len(a)
 	m := len(b)
 	var v = make([][]int, m+1)
@@ -111,7 +125,7 @@ func diffBytes(as, bs []byte) diff.BytesDiff {
 		}
 
 		if p.From.A == p.To.A {
-			edits = append(edits, diff.NewLineEdit(diff.INS, bLine, -1, p.From.B))
+			edits = append(edits, diff.NewLineEdit(diff.INS, bLine, 0, p.From.B))
 		} else if p.From.B == p.To.B {
 			edits = append(edits, diff.NewLineEdit(diff.DEL, aLine, p.From.A, -1))
 		} else {

@@ -42,6 +42,14 @@ func (o *Objects) GetBlob(sum string) (objects.Blob, error) {
 	return obj, nil
 }
 
+func (o *Objects) GetBlobContent(sum string) ([]byte, error) {
+	blob, err := o.GetBlob(sum)
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't get blob contents %s", sum)
+	}
+	return []byte(blob.Contents), nil
+}
+
 func (o *Objects) StoreBlob(sum string, bs []byte) error {
 	dir := sum[:2]
 	file := filepath.Join(o.dir, ObjectsDir, dir, sum[2:])
@@ -106,6 +114,14 @@ func (o *Objects) GetCommit(sum string) (objects.Commit, error) {
 		return objects.Commit{}, errors.Wrapf(err, "couldn't get commit %s", sum)
 	}
 	return commit, nil
+}
+
+func (o *Objects) GetCommitTree(sum string) (objects.Tree, error) {
+	c, err := o.GetCommit(sum)
+	if err != nil {
+		return objects.Tree{}, errors.Wrapf(err, "couldn't get tree from commit %s", sum)
+	}
+	return o.GetTree(c.TreeHash)
 }
 
 func (o *Objects) StoreCommit(commit objects.Commit) (string, error) {

@@ -31,5 +31,5 @@ func run(cmd *cobra.Command, args []string, add bool) {
 	if !add && !g.Index.HasEntryFor(filename) {
 		return
 	}
-	g.AddToIndex(filename)
+	g.UpdateIndex(filename)
 }
