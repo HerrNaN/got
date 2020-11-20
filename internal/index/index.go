@@ -18,16 +18,9 @@ type Index interface {
 	// into the index
 	AddTreeContents(tree objects.Tree) error
 
-	// Add a tree object into the index
-	AddTree(id objects.ID, prefix string) error
-
 	// Returns true if the index contains an entry for a given file.
 	HasEntryFor(filename string) bool
 
 	// Gets the checksum of the entry of the given file.
 	GetEntrySum(filename string) (objects.ID, error)
-
-	// Checks if a directory has any descendants that are part of the current
-	// index. That is any staged descendants.
-	HasDescendantsInIndex(dir string) bool
 }

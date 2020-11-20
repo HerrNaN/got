@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/pkg/errors"
 
@@ -82,30 +81,6 @@ func (i *Index) AddTreeContents(tree objects.Tree) error {
 	return i.writeToFile()
 }
 
-func (i *Index) AddTree(id objects.ID, prefix string) error {
-	i.Entries[prefix] = index.NewEntry(os.ModePerm, objects.TypeTree, id, prefix)
-	return i.writeToFile()
-}
-
-func (i *Index) GetEntryFor(name string) (index.Entry, error) {
-	e, ok := i.Entries[name]
-	if !ok {
-		return index.Entry{}, fmt.Errorf("couldn't find entry for file %s", name)
-	}
-	return e, nil
-}
-
-func (i *Index) GetEntry(id objects.ID, name string) (index.Entry, error) {
-	e, err := i.GetEntryFor(name)
-	if err != nil {
-		return index.Entry{}, errors.Wrapf(err, "couldn't get entry %s", name)
-	}
-	if e.ID != id {
-		return index.Entry{}, fmt.Errorf("found entry does not match sum %s", id)
-	}
-	return e, nil
-}
-
 func (i *Index) HasEntryFor(name string) bool {
 	_, ok := i.Entries[name]
 	return ok
@@ -117,15 +92,6 @@ func (i *Index) GetEntrySum(filename string) (objects.ID, error) {
 		return "", errors.New("entry not found")
 	}
 	return e.ID, nil
-}
-
-func (i *Index) HasDescendantsInIndex(dir string) bool {
-	for _, e := range i.SortedEntries() {
-		if strings.HasPrefix(e.Name, dir) {
-			return true
-		}
-	}
-	return false
 }
 
 func (i *Index) updateChecksum() {
