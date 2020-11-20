@@ -27,6 +27,21 @@ const (
 	ObjectsDir = "objects"
 )
 
+func (o *Objects) Store(obj objects.Object) error {
+	id := obj.ID()
+	dir := string(id)[:2]
+	file := filepath.Join(o.dir, ObjectsDir, dir, string(id)[2:])
+	err := filesystem.MkDirIfIsNotExist(filepath.Join(o.dir, ObjectsDir, dir), os.ModePerm)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't store %s %s", obj.Type(), id)
+	}
+	buf, err := json.Marshal(obj)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't store %s %s", obj.Type(), id)
+	}
+	return ioutil.WriteFile(file, buf, os.ModePerm)
+}
+
 func (o *Objects) GetBlob(id objects.ID) (objects.Blob, error) {
 	file := filepath.Join(o.dir, ObjectsDir, string(id)[:2], string(id)[2:])
 	var obj objects.Blob
@@ -49,21 +64,6 @@ func (o *Objects) GetBlobContent(id objects.ID) ([]byte, error) {
 	return []byte(blob.Contents), nil
 }
 
-func (o *Objects) StoreBlob(id objects.ID, bs []byte) error {
-	dir := string(id)[:2]
-	file := filepath.Join(o.dir, ObjectsDir, dir, string(id)[2:])
-	err := filesystem.MkDirIfIsNotExist(filepath.Join(o.dir, ObjectsDir, dir), os.ModePerm)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't store blob %s", id)
-	}
-	blob := objects.NewBlob(bs)
-	buf, err := json.Marshal(blob)
-	if err != nil {
-		return errors.Wrap(err, "couldn't store blob")
-	}
-	return ioutil.WriteFile(file, buf, os.ModePerm)
-}
-
 func (o *Objects) GetTree(id objects.ID) (objects.Tree, error) {
 	file := filepath.Join(o.dir, ObjectsDir, string(id)[:2], string(id)[2:])
 	var tree objects.Tree
@@ -76,27 +76,6 @@ func (o *Objects) GetTree(id objects.ID) (objects.Tree, error) {
 		return objects.Tree{}, errors.Wrapf(err, "couldn't get tree %s", id)
 	}
 	return tree, nil
-}
-
-func (o *Objects) StoreTree(id objects.ID, entries []objects.TreeEntry) error {
-	dir := string(id)[:2]
-	file := filepath.Join(o.dir, ObjectsDir, dir, string(id)[2:])
-	err := filesystem.MkDirIfIsNotExist(filepath.Join(o.dir, ObjectsDir, dir), os.ModePerm)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't store tree %s", id)
-	}
-	tree := objects.Tree{
-		Entries: entries,
-	}
-	buf, err := json.Marshal(tree)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't store tree %s", id)
-	}
-	err = ioutil.WriteFile(file, buf, os.ModePerm)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't store tree %s", id)
-	}
-	return nil
 }
 
 func (o *Objects) GetCommit(id objects.ID) (objects.Commit, error) {
@@ -119,21 +98,6 @@ func (o *Objects) GetCommitTree(id objects.ID) (objects.Tree, error) {
 		return objects.Tree{}, errors.Wrapf(err, "couldn't get tree from commit %s", id)
 	}
 	return o.GetTree(c.TreeID)
-}
-
-func (o *Objects) StoreCommit(commit objects.Commit) (objects.ID, error) {
-	id := commit.ID()
-	dir := string(id)[:2]
-	file := filepath.Join(o.dir, ObjectsDir, dir, string(id)[2:])
-	err := filesystem.MkDirIfIsNotExist(filepath.Join(o.dir, ObjectsDir, dir), os.ModePerm)
-	if err != nil {
-		return "", errors.Wrapf(err, "couldn't store commit %s", id)
-	}
-	buf, err := json.Marshal(commit)
-	if err != nil {
-		return "", errors.Wrapf(err, "couldn't store commit %s", id)
-	}
-	return id, ioutil.WriteFile(file, buf, os.ModePerm)
 }
 
 func (o *Objects) TypeOf(id objects.ID) (objects.Type, error) {

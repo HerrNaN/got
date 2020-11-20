@@ -73,7 +73,7 @@ func (g *Got) HashFile(filename string, store bool) (objects.ID, error) {
 	blob := objects.NewBlob(bs)
 	sum := blob.ID()
 	if store {
-		err = g.Objects.StoreBlob(sum, bs)
+		err = g.Objects.Store(blob)
 		if err != nil {
 			return "", errors.Wrapf(err, "couldn't hash file %s", filename)
 		}

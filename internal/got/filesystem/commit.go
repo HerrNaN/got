@@ -43,5 +43,5 @@ func (g *Got) CommitTree(msg string, treeID objects.ID, parentID *objects.ID) (o
 	buf += fmt.Sprintln("author John Doe <john@doe.com> 0123456789 +0000")
 	buf += fmt.Sprintln("committer John Doe <john@doe.com> 0123456789 +0000")
 	buf += fmt.Sprintf("\n%s", msg)
-	return g.Objects.StoreCommit(commit)
+	return commit.ID(), g.Objects.Store(commit)
 }

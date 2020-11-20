@@ -19,10 +19,9 @@ func (g *Got) WriteTree() (objects.ID, error) {
 	tree := objects.Tree{
 		Entries: entries,
 	}
-	id := tree.ID()
-	err := g.Objects.StoreTree(id, tree.Entries)
+	err := g.Objects.Store(tree)
 	if err != nil {
 		return "", errors.Wrapf(err, "couldn't write tree")
 	}
-	return id, nil
+	return tree.ID(), nil
 }
