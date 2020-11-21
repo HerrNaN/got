@@ -97,10 +97,6 @@ func (g *Got) repoRel(path string) (string, error) {
 	return repoRel, nil
 }
 
-func (g *Got) moveHead(id objects.ID) error {
-	return ioutil.WriteFile(filepath.Join(g.dir, headFile), []byte(id), os.ModePerm)
-}
-
 // The path parameter in f is relative to the repository root
 func (g *Got) forAllInRepo(dir string, f func(path string, info os.FileInfo, err error) error) error {
 	if g.isIgnored(dir) {
