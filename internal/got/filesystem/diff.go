@@ -44,11 +44,22 @@ func (g *Got) diffIndexPath(path string) (diff.Hunks, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't diff index with HEAD %s", path)
 	}
-	headHash, err := g.Head()
+	headType, err := g.HeadType()
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't diff index with HEAD %s", path)
 	}
-	hd, err := g.getContentsOfPathFromCommit(path, *headHash)
+	if headType == HeadTypeEmpty {
+		return nil, errors.New("no head to diff against")
+	}
+	ref, err := g.HeadAsRef()
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't diff index with HEAD %s", path)
+	}
+	headID, err := g.Refs.IDFromRef(ref)
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't diff index with HEAD %s", path)
+	}
+	hd, err := g.getContentsOfPathFromCommit(path, headID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't diff index with HEAD %s", path)
 	}

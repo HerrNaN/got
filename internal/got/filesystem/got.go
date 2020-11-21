@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"got/internal/refs"
+
 	"got/internal/diff/simple"
 
 	"got/internal/diff"
@@ -35,6 +37,7 @@ type Got struct {
 	Index   index.Index
 	Ignores map[string]bool
 	Differ  diff.Differ
+	Refs    *refs.Refs
 }
 
 func NewGot() (*Got, error) {
@@ -62,6 +65,7 @@ func NewGot() (*Got, error) {
 		Index:   i,
 		Ignores: ignores,
 		Differ:  simple.Diff{},
+		Refs:    refs.NewRefs(gotDir),
 	}, nil
 }
 
@@ -81,21 +85,6 @@ func (g *Got) HashFile(filename string, store bool) (objects.ID, error) {
 	return sum, nil
 }
 
-func (g *Got) Head() (*objects.ID, error) {
-	bs, err := ioutil.ReadFile(filepath.Join(g.dir, headFile))
-	if err != nil {
-		return nil, errors.Wrap(err, "couldn't read HEAD file")
-	}
-	if len(bs) == 0 {
-		return nil, nil
-	}
-	id, err := objects.IdFromString(string(bs))
-	if err != nil {
-		return nil, errors.Wrap(err, "couldn't read HEAD file")
-	}
-	return &id, nil
-}
-
 func (g *Got) repoRel(path string) (string, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
@@ -110,23 +99,6 @@ func (g *Got) repoRel(path string) (string, error) {
 
 func (g *Got) moveHead(id objects.ID) error {
 	return ioutil.WriteFile(filepath.Join(g.dir, headFile), []byte(id), os.ModePerm)
-}
-
-func (g *Got) headTree() (*objects.Tree, error) {
-	head, err := g.Head()
-	if err != nil {
-		return nil, err
-	}
-	if head == nil {
-		return nil, nil
-	}
-	c, err := g.Objects.GetCommit(*head)
-	if err != nil {
-		return nil, err
-	}
-	tree, err := g.Objects.GetTree(c.TreeID)
-	return &tree, err
-
 }
 
 // The path parameter in f is relative to the repository root
@@ -221,7 +193,9 @@ func IsInitialized(dir string) bool {
 	return filesystem.DirExists(filepath.Join(dir, rootDir)) &&
 		filesystem.DirExists(filepath.Join(dir, objectsDir)) &&
 		filesystem.FileExists(filepath.Join(dir, indexFile)) &&
-		filesystem.FileExists(filepath.Join(dir, headFile))
+		filesystem.FileExists(filepath.Join(dir, headFile)) &&
+		filesystem.DirExists(filepath.Join(dir, rootDir, refs.Dir)) &&
+		filesystem.DirExists(filepath.Join(dir, rootDir, refs.Dir, refs.HeadsDir))
 }
 
 func Initialize(dir string) error {
@@ -241,6 +215,14 @@ func Initialize(dir string) error {
 		return err
 	}
 	err = filesystem.MkFileIfIsNotExist(filepath.Join(dir, headFile))
+	if err != nil {
+		return err
+	}
+	err = filesystem.MkDirIfIsNotExist(filepath.Join(dir, rootDir, refs.Dir), os.ModePerm)
+	if err != nil {
+		return err
+	}
+	err = filesystem.MkDirIfIsNotExist(filepath.Join(dir, rootDir, refs.Dir, refs.HeadsDir), os.ModePerm)
 	if err != nil {
 		return err
 	}

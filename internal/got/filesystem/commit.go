@@ -9,19 +9,52 @@ import (
 )
 
 func (g *Got) Commit(message string) error {
-	head, err := g.Head()
+	headType, err := g.HeadType()
 	if err != nil {
 		return errors.Wrap(err, "couldn't perform commit")
 	}
-	tree, err := g.WriteTree()
+	if headType == HeadTypeRef {
+		return g.commitAtRef(message)
+	}
+	return g.firstCommit(message)
+}
+
+func (g *Got) commitAtRef(message string) error {
+	ref, err := g.HeadAsRef()
 	if err != nil {
 		return errors.Wrap(err, "couldn't perform commit")
 	}
-	commitID, err := g.CommitTree(message, tree, head)
+	currentCommitID, err := g.Refs.IDFromRef(ref)
 	if err != nil {
 		return errors.Wrap(err, "couldn't perform commit")
 	}
-	err = g.moveHead(commitID)
+	treeID, err := g.WriteTree()
+	if err != nil {
+		return errors.Wrap(err, "couldn't perform commit")
+	}
+	// Update branch head if it exists
+	newCommitID, err := g.CommitTree(message, treeID, &currentCommitID)
+	err = g.Refs.UpdateRef(ref, newCommitID)
+	if err != nil {
+		return errors.Wrap(err, "couldn't perform commit")
+	}
+	return nil
+}
+
+func (g *Got) firstCommit(message string) error {
+	treeID, err := g.WriteTree()
+	if err != nil {
+		return errors.Wrap(err, "couldn't perform commit")
+	}
+	newCommitID, err := g.CommitTree(message, treeID, nil)
+	if err != nil {
+		return errors.Wrap(err, "couldn't perform commit")
+	}
+	ref, err := g.Refs.CreateBranchAt("master", newCommitID)
+	if err != nil {
+		return errors.Wrap(err, "couldn't perform commit")
+	}
+	err = g.updateHeadWithRef(ref)
 	if err != nil {
 		return errors.Wrap(err, "couldn't perform commit")
 	}

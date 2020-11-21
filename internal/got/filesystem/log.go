@@ -35,14 +35,14 @@ func (le LogEntry) String() string {
 }
 
 func (g *Got) Log(n int) (Log, error) {
-	commitID, err := g.Head()
+	headID, err := g.idAtHead()
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't show log")
 	}
-	if commitID == nil {
+	if headID == nil {
 		return nil, nil
 	}
-	commit, err := g.Objects.GetCommit(*commitID)
+	commit, err := g.Objects.GetCommit(*headID)
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't show log")
 	}

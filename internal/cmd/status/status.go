@@ -21,7 +21,7 @@ func runStatus(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		return
 	}
-	head, err := g.Head()
+	headType, err := g.HeadType()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -32,11 +32,16 @@ func runStatus(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if head == nil {
+	switch headType {
+	case filesystem.HeadTypeEmpty:
 		fmt.Println("No commits yet")
-	} else {
-		fmt.Printf("HEAD at %s\n", *head)
+	case filesystem.HeadTypeRef:
+		ref, err := g.HeadAsRef()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Printf("On branch %s\n", ref.Name())
 	}
-
 	fmt.Println(s)
 }
