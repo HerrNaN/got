@@ -72,13 +72,16 @@ func (r *Refs) UpdateRef(ref Ref, id objects.ID) error {
 }
 
 func (r *Refs) CreateBranchAt(branchName string, id objects.ID) (Ref, error) {
-	filename := filepath.Join(r.headsDir(), branchName)
-	if filesystem.FileExists(filename) {
-		return "", fmt.Errorf("branch %s already exists", branchName)
-	}
-	err := ioutil.WriteFile(filename, []byte(id), os.ModePerm)
+	ref, err := RefFromString(filepath.Join(r.headsDir(), branchName))
 	if err != nil {
-		return "", fmt.Errorf("branch %s already exists", branchName)
+		return "", errors.Wrapf(err, "couldn't create branch %s at %s", branchName, id)
+	}
+	if filesystem.FileExists(string(ref)) {
+		return "", errors.Errorf("branch %s already exists", branchName)
+	}
+	err = ioutil.WriteFile(string(ref), []byte(id), os.ModePerm)
+	if err != nil {
+		return "", errors.Wrapf(err, "couldn't create branch %s at %s", branchName, id)
 	}
 	return Ref(filepath.Join(Dir, HeadsDir, branchName)), nil
 }
