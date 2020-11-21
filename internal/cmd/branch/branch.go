@@ -9,21 +9,32 @@ import (
 )
 
 var Cmd = &cobra.Command{
-	Use:   "branch <newbranch>",
-	Short: "Create branches",
-	Args:  cobra.ExactArgs(1),
+	Use: `branch <newbranch>
+   branch --list`,
+	Short:                 "Create and list branches",
+	DisableFlagsInUseLine: true,
 }
 
 func init() {
+	list := Cmd.Flags().Bool("list", false, "list all branches")
 	Cmd.Run = func(cmd *cobra.Command, args []string) {
-		runBranch(cmd, args)
+		runBranch(cmd, args, *list)
 	}
 }
 
-func runBranch(cmd *cobra.Command, args []string) {
+func runBranch(cmd *cobra.Command, args []string, list bool) {
 	g, err := filesystem.NewGot()
 	if err != nil {
 		fmt.Println(err)
+		return
+	}
+	if list {
+		branches, err := g.ListBranches()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Print(branches)
 		return
 	}
 	newBranch := args[0]

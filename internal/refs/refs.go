@@ -38,8 +38,8 @@ func RefFromString(s string) (Ref, error) {
 }
 
 func (r Ref) Name() string {
-	_, file := filepath.Split(string(r))
-	return file
+	name, _ := filepath.Rel(filepath.Join(Dir, HeadsDir), string(r))
+	return name
 }
 
 type Refs struct {
@@ -105,6 +105,7 @@ func (r *Refs) Branches() ([]string, error) {
 		if err != nil {
 			return err
 		}
+		// Doesn't support branch groups
 		if info.IsDir() {
 			return nil
 		}

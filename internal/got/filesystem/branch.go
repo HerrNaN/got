@@ -1,6 +1,15 @@
 package filesystem
 
-import "github.com/pkg/errors"
+import (
+	"bytes"
+	"fmt"
+
+	"got/internal/refs"
+
+	"github.com/gookit/color"
+
+	"github.com/pkg/errors"
+)
 
 func (g *Got) CreateBranch(newBranch string) error {
 	id, err := g.idAtHead()
@@ -15,4 +24,33 @@ func (g *Got) CreateBranch(newBranch string) error {
 		return errors.Wrapf(err, "couldn't create branch %s", newBranch)
 	}
 	return nil
+}
+
+func (g *Got) ListBranches() (Branches, error) {
+	branches, err := g.Refs.Branches()
+	if err != nil {
+		return Branches{}, errors.Wrapf(err, "couldn't list branches")
+	}
+	headRef, err := g.HeadAsRef()
+	if err != nil {
+		return Branches{}, errors.Wrapf(err, "couldn't list branches")
+	}
+	return Branches{branches, headRef}, nil
+}
+
+type Branches struct {
+	list    []string
+	current refs.Ref
+}
+
+func (bs Branches) String() string {
+	buf := bytes.NewBuffer(nil)
+	for _, b := range bs.list {
+		if b == bs.current.Name() {
+			fmt.Fprintln(buf, "* "+color.Green.Sprint(b))
+		} else {
+			fmt.Fprintln(buf, "  "+b)
+		}
+	}
+	return buf.String()
 }
