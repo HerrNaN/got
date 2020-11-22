@@ -14,7 +14,7 @@ Porcelain:
 - `got status`
 - `got commit -m <message>`
 - `got branch {-d <branchname> | --list | <newbranch>}`
-- `got checkout`
+- `got checkout {<branchname> | -b <newbranch>}`
 
 Plumbing:
 - `got hash-object [-w] <file>...`
