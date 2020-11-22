@@ -71,6 +71,21 @@ func (r *Refs) UpdateRef(ref Ref, id objects.ID) error {
 	return nil
 }
 
+func (r *Refs) DeleteRef(branchName string) error {
+	ref, err := RefFromString(filepath.Join(Dir, HeadsDir, branchName))
+	if err != nil {
+		return errors.Wrapf(err, "couldn't delete branch %s", branchName)
+	}
+	if !filesystem.FileExists(filepath.Join(r.gotDir, string(ref))) {
+		return errors.Errorf("branch %s not found", branchName)
+	}
+	err = os.Remove(filepath.Join(r.gotDir, string(ref)))
+	if err != nil {
+		return errors.Wrapf(err, "couldn't delete branch %s", branchName)
+	}
+	return nil
+}
+
 func (r *Refs) CreateBranchAt(branchName string, id objects.ID) (Ref, error) {
 	ref, err := RefFromString(filepath.Join(r.headsDir(), branchName))
 	if err != nil {

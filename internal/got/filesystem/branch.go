@@ -26,6 +26,14 @@ func (g *Got) CreateBranch(newBranch string) error {
 	return nil
 }
 
+func (g *Got) DeleteBranch(branchName string) error {
+	err := g.Refs.DeleteRef(branchName)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't delete branch %s", branchName)
+	}
+	return nil
+}
+
 func (g *Got) ListBranches() (Branches, error) {
 	branches, err := g.Refs.Branches()
 	if err != nil {
