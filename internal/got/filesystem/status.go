@@ -19,6 +19,14 @@ type fileInfo struct {
 }
 
 func (g *Got) Status() (*status.Status, error) {
+	tree, err := g.statusTree()
+	if err != nil {
+		return nil, err
+	}
+	return tree.GetStatus(), nil
+}
+
+func (g *Got) statusTree() (*status.Tree, error) {
 	headDiff, err := g.diffHead()
 	if err != nil {
 		return nil, err
@@ -55,7 +63,7 @@ func (g *Got) Status() (*status.Status, error) {
 		tree.AddFile(d, status.Changes{}, false)
 	}
 
-	return tree.GetStatus(), nil
+	return tree, nil
 }
 
 func (g *Got) diffHead() ([]*diff.FileDiff, error) {

@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	"got/internal/cmd/checkout"
+
 	"got/internal/cmd/branch"
 
 	"got/internal/cmd/log"
@@ -43,4 +45,5 @@ func init() {
 	GotCmd.AddCommand(diff.Cmd)
 	GotCmd.AddCommand(log.Cmd)
 	GotCmd.AddCommand(branch.Cmd)
+	GotCmd.AddCommand(checkout.Cmd)
 }

@@ -50,6 +50,21 @@ func NewRefs(gotDir string) *Refs {
 	return &Refs{gotDir}
 }
 
+func (r *Refs) BranchRef(branchName string) (Ref, error) {
+	ref, err := RefFromString(filepath.Join(Dir, HeadsDir, branchName))
+	if err != nil {
+		return "", errors.Wrapf(err, "couldn't get branch ref for %s", branchName)
+	}
+	if !filesystem.FileExists(filepath.Join(r.gotDir, string(ref))) {
+		return "", errors.Errorf("branch %s not found", branchName)
+	}
+	return ref, nil
+}
+
+func (r *Refs) BranchExists(branchName string) bool {
+	return filesystem.FileExists(filepath.Join(r.gotDir, Dir, HeadsDir, branchName))
+}
+
 func (r *Refs) IDFromRef(ref Ref) (objects.ID, error) {
 	filename := filepath.Join(r.gotDir, string(ref))
 	bs, err := ioutil.ReadFile(filename)
@@ -101,7 +116,7 @@ func (r *Refs) CreateBranchAt(branchName string, id objects.ID) (Ref, error) {
 	return Ref(filepath.Join(Dir, HeadsDir, branchName)), nil
 }
 
-func (r *Refs) HeadForBranch(branchName string) (objects.ID, error) {
+func (r *Refs) IdAtBranch(branchName string) (objects.ID, error) {
 	filename := filepath.Join(r.headsDir(), branchName)
 	bs, err := ioutil.ReadFile(filename)
 	if err != nil {

@@ -18,6 +18,15 @@ func NewTree() *Tree {
 	return &Tree{}
 }
 
+func (t *Tree) HasChanges() bool {
+	for _, n := range *t {
+		if n.tracked && n.changes.HasChanges() {
+			return true
+		}
+	}
+	return false
+}
+
 func (t *Tree) AddFile(path string, changes Changes, tracked bool) {
 	dirs := strings.Split(path, string(filepath.Separator))
 	t.addFile(dirs, changes, tracked)
@@ -73,16 +82,6 @@ func (t *Tree) addFile(splitPath []string, changes Changes, tracked bool) {
 	tree.addFile(splitPath[1:], changes, tracked)
 }
 
-func (c Changes) AddChanges(changes Changes) Changes {
-	if c.Head == "" {
-		c.Head = changes.Head
-	}
-	if c.Worktree == "" {
-		c.Worktree = changes.Worktree
-	}
-	return c
-}
-
 func (t *Tree) GetStatus() *Status {
 	s := Status{}
 	return t.getStatus("", &s)
@@ -116,4 +115,18 @@ func (t *Tree) getStatus(rel string, s *Status) *Status {
 		s = n.cs.getStatus(path, s)
 	}
 	return s
+}
+
+func (c Changes) AddChanges(changes Changes) Changes {
+	if c.Head == "" {
+		c.Head = changes.Head
+	}
+	if c.Worktree == "" {
+		c.Worktree = changes.Worktree
+	}
+	return c
+}
+
+func (c Changes) HasChanges() bool {
+	return c.Head != "" || c.Worktree != ""
 }

@@ -1,7 +1,6 @@
 package filesystem
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -101,11 +100,7 @@ func (g *Got) headTree() (*objects.Tree, error) {
 }
 
 func (g *Got) updateHeadWithID(id objects.ID) error {
-	bs, err := json.Marshal(id)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't update HEAD with id %s", id)
-	}
-	err = ioutil.WriteFile(filepath.Join(g.dir, headFile), bs, os.ModePerm)
+	err := ioutil.WriteFile(filepath.Join(g.dir, headFile), []byte(id), os.ModePerm)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't update HEAD with id %s", id)
 	}
@@ -113,11 +108,7 @@ func (g *Got) updateHeadWithID(id objects.ID) error {
 }
 
 func (g *Got) updateHeadWithRef(ref refs.Ref) error {
-	bs, err := json.Marshal(ref)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't update HEAD with ref %s", ref)
-	}
-	err = ioutil.WriteFile(filepath.Join(g.dir, headFile), bs, os.ModePerm)
+	err := ioutil.WriteFile(filepath.Join(g.dir, headFile), []byte(ref), os.ModePerm)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't update HEAD with ref %s", ref)
 	}
