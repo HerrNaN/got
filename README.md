@@ -13,6 +13,8 @@ Porcelain:
 - `got restore [--staged] <filespec>...`
 - `got status`
 - `got commit -m <message>`
+- `got branch {-d <branchname> | --list | <newbranch>}`
+- `got checkout`
 
 Plumbing:
 - `got hash-object [-w] <file>...`
