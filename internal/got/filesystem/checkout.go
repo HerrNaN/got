@@ -9,20 +9,36 @@ import (
 
 // 1. Update HEAD
 // 2. Update WT
-func (g *Got) Checkout(branchName string) error {
-	if !g.Refs.BranchExists(branchName) {
-		return errors.Errorf("branch %s doesn't exist", branchName)
-	}
-	id, err := g.Refs.IdAtBranch(branchName)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't checkout branch %s", branchName)
-	}
+func (g *Got) Checkout(branchName string, create bool) error {
 	statusTree, err := g.statusTree()
 	if err != nil {
 		return errors.Wrapf(err, "couldn't checkout branch %s", branchName)
 	}
 	if statusTree.HasChanges() {
 		return errors.New("cannot checkout branch with uncommitted changes")
+	}
+
+	if create {
+		id, err := g.idAtHead()
+		if err != nil {
+			return errors.Wrapf(err, "couldn't checkout branch %s", branchName)
+		}
+		if id == nil {
+			return errors.New("cannot create a new branch before first commit")
+		}
+		_, err = g.Refs.CreateBranchAt(branchName, *id)
+		if err != nil {
+			return errors.Wrapf(err, "couldn't checkout branch %s", branchName)
+		}
+	} else {
+		if !g.Refs.BranchExists(branchName) {
+			return errors.Errorf("branch %s doesn't exist", branchName)
+		}
+	}
+
+	id, err := g.Refs.IdAtBranch(branchName)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't checkout branch %s", branchName)
 	}
 	commit, err := g.Objects.GetCommit(id)
 	if err != nil {
