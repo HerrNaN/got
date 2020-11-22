@@ -82,6 +82,18 @@ func (g *Got) idAtHead() (*objects.ID, error) {
 	return &id, nil
 }
 
+func (g *Got) headAtBranch(branchName string) (bool, error) {
+	ref, err := g.Refs.BranchRef(branchName)
+	if err != nil {
+		return false, errors.Wrapf(err, "couldn't determine if HEAD is at branch %s")
+	}
+	headRef, err := g.HeadAsRef()
+	if err != nil {
+		return false, errors.Wrapf(err, "couldn't determine if HEAD is at branch %s")
+	}
+	return ref == headRef, nil
+}
+
 func (g *Got) headTree() (*objects.Tree, error) {
 	headID, err := g.idAtHead()
 	if err != nil {

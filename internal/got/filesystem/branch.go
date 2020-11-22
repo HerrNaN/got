@@ -27,7 +27,14 @@ func (g *Got) CreateBranch(newBranch string) error {
 }
 
 func (g *Got) DeleteBranch(branchName string) error {
-	err := g.Refs.DeleteRef(branchName)
+	onBranchToDelete, err := g.headAtBranch(branchName)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't delete branch %s", branchName)
+	}
+	if onBranchToDelete {
+		return errors.New("cannot delete branch while on it")
+	}
+	err = g.Refs.DeleteRef(branchName)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't delete branch %s", branchName)
 	}
